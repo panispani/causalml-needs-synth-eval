@@ -122,7 +122,8 @@ df_table = df_table.loc[cond, :]
 
 # Remove the specified level names
 for level in ["model__num_layers", "split"]:
-    df_table.index = df_table.index.droplevel(level)
+    if level in df_table.index.names:
+        df_table.index = df_table.index.droplevel(level)
 
 # df_table = df_table.droplevel(level=[0,2])
 l0 = df_table.index.names.index("SEM")
