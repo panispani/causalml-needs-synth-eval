@@ -45,13 +45,36 @@ python main.py --config_file causal_nf/configs/causal_nf.yaml --wandb_mode disab
 
 4. Reproduce Table 2
 
-# CausalNF
+## CausalNF
 
 ```bash
 # Create the experiments for CausalNF
-# Note that if you have a GPU available you need to manually edit `base.yaml` from `device: [ cpu ]` to `device: [ cuda ]`
+# Note that if you have a GPU available you need to manually edit `base.yaml` from `device: [ cpu ]` to `device: [ cuda ]` - however I think the causalNF code doesn't work e.g. in main.py you need to move the model to cuda manually + in many other places you will see RuntimeErrors of data being on different devices.
 # What does 'generate_jobs.py' do:
-: <<'EOF'
-EOF
+# Will create jobs.sh with 90 batch jobs each having 4 runs to main, each is run sequentially. --grid_file specifies where you read the config from
+# Neither jobs_per_file nor batch_size mean "How many files to generate" in contrast to what 'main.py' claims with --help.
+# The 'options' variable is a list of tuples, where each tuple will be the config for a job. If you want to create more or less jobs, edit the options. See helper.py::generate_options
+# to run your own experiment create your own directory in place of causal-flows/grids/causal_nf/comparison_x_u with your own base and then base_scm.yaml
 python generate_jobs.py --grid_file grids/causal_nf/comparison_x_u/base.yaml --format shell --jobs_per_file 20000 --batch_size 4
+
+# Running the jobs
+# See what the previous command says about where the jobs scripts are, they are in a subdirectory <grid_file>/jobs_sh/jobs_1.sh
+bash <grid_file>/jobs_sh/jobs_1.sh
+bash grids/causal_nf/comparison_x_u/base/jobs_sh/jobs_1_test.sh # for testing if 1 job works
+bash grids/causal_nf/comparison_x_u/base/jobs_sh/jobs_1.sh # if you're there until the end, or:
+nohup bash grids/causal_nf/comparison_x_u/base/jobs_sh/jobs_1.sh > output_causal_nf_jobs.log 2>&1 &
+# To monitor this job check the contents of `output_causal_nf_jobs.log` e.g.
+watch -n1 tail output_causal_nf_jobs.log
+
+# Plotting table 2
+# Note that if you didn't run everything and only for example this one, you need to edit line 59 from `for exp_folder in exp_folders:` to `for exp_folder in exp_folders[:1]:`
+python scripts/create_comparison_flows.py
+
+# Print the table
+python -c "import pandas as pd; print(pd.read_pickle('results/dataframes/comparison_flows.pickle'))"
+## Don't hide columns
+python -c "import pandas as pd; pd.set_option('display.max_columns', None); pd.set_option('display.max_rows', None); print(pd.read_pickle('results/dataframes/comparison_flows.pickle'))"
+# If it's hard to read in the terminal (it will be), use `display_comparison_table.ipynb` (adviced!)
 ```
+
+## Repeat the same as above for VACA and CAREFL as specified in the README.md (or trust yourself and edit the commands of the previous section manually).
