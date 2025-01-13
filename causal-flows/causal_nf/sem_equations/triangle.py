@@ -1,5 +1,6 @@
 import torch
 import random
+import math
 
 from causal_nf.sem_equations.sem_base import SEM
 
@@ -139,6 +140,91 @@ class Triangle(SEM):
                 return seg_linear_inverse(val)
 
             # Don't think that CausalNF should need this.
+            # inverses = [inv_f1, inv_f2, inv_f3]
+        elif sem_name.startswith("sinusoid_"):
+            """
+            "sinusoid_<f>": sinusoidal noise
+            """
+            # Parse frequency f
+            freq_str = sem_name.replace("sinusoid_", "")
+            f_freq = float(freq_str)
+
+            # g(u) = sin(2 pi f_freq u)
+            def sinusoid(u):
+                return torch.sin(2.0 * math.pi * f_freq * u)
+
+            # Helper: invert y = sin(2 pi f_freq u), find all solutions in [0,1].
+            def sinusoid_inverse(y):
+                """
+                Solve sin(2 pi f_freq * u) = y for u in [0,1].
+                We'll gather all solutions in [0,1], pick one at random.
+                If no solutions, raise ValueError.
+                """
+                # If y not in [-1,1], no solutions
+                if y < -1.0 or y > 1.0:
+                    raise ValueError(
+                        f"sinusoid_inverse: no solutions for y={y} outside [-1,1]."
+                    )
+
+                # arcsin(y) in [-pi/2, pi/2]
+                alpha = math.asin(y)
+                # general solutions: alpha + 2 pi k,  pi - alpha + 2 pi k
+                #  => 2 pi f_freq u = alpha + 2 pi k   OR   2 pi f_freq u = pi - alpha + 2 pi k
+                #  => u = [alpha + 2 pi k] / [2 pi f_freq] , etc.
+
+                candidates = []
+                # We test integer k in some range.  The frequency can be large, so be generarous when picking k
+                # These are the general solutions basically.
+                for k in range(-20, 21):
+                    # first root: alpha + 2 pi k
+                    u_candidate1 = (alpha + 2 * math.pi * k) / (2 * math.pi * f_freq)
+                    # second root: (pi - alpha) + 2 pi k
+                    u_candidate2 = (math.pi - alpha + 2 * math.pi * k) / (
+                        2 * math.pi * f_freq
+                    )
+
+                    # check if within [0,1]
+                    if 0.0 <= u_candidate1 <= 1.0:
+                        candidates.append(u_candidate1)
+                    if 0.0 <= u_candidate2 <= 1.0:
+                        candidates.append(u_candidate2)
+
+                # remove duplicates, sort if you like
+                candidates = list(set(candidates))  # unique
+                if len(candidates) == 0:
+                    raise ValueError(
+                        f"No solution u in [0,1] for sin(2 pi * {f_freq} * u)={y}."
+                    )
+
+                return random.choice(candidates)
+
+            # The structural equations (non-linear) with sinusoidal noise:
+            def f1(u1):
+                return sinusoid(u1)
+
+            def f2(x1, u2):
+                return 2.0 * x1**2 + sinusoid(u2)
+
+            def f3(x1, x2, u3):
+                return 20.0 / (1.0 + torch.exp(-(x2**2) + x1)) + sinusoid(u3)
+
+            functions = [f1, f2, f3]
+
+            # Inverses
+            inv_f1 = lambda x1: sinusoid_inverse(float(x1))
+
+            def inv_f2(x1, x2):
+                # y = x2 - 2*x1^2
+                val = float(x2 - 2.0 * x1**2)
+                return sinusoid_inverse(val)
+
+            def inv_f3(x1, x2, x3):
+                # y = x3 - 20/(1 + exp(-(x2^2) + x1))
+                base = 20.0 / (1.0 + torch.exp(-(x2**2) + x1))
+                val = float(x3 - base)
+                return sinusoid_inverse(val)
+
+            # I think causalNF shouldn't need this
             # inverses = [inv_f1, inv_f2, inv_f3]
 
         super().__init__(functions, inverses, sem_name)
