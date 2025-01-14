@@ -42,13 +42,17 @@ class Triangle(SEM):
                 lambda x1, x2: (10 * x1**0.5 - x2),
                 lambda x1, x2, x3: (x3 - 0.5 * x2 - +1 / (1.0 + x1)) / 1.0,
             ]
-        elif sem_name.startswith("seg_linear_"):
+        elif sem_name.startswith("seg-linear-"):
             """
-            "seg_linear_<interval_size>": piecewise linear noise around 0.5
+            "seg-linear-<interval_size>": piecewise linear noise around 0.5,
+            applied to the NON-LINEAR structural equations:
+                f1(u) = seg_linear(u)
+                f2(x1, u) = 2*x1^2 + seg_linear(u)
+                f3(x1, x2, u) = 20/(1 + exp(-(x2^2) + x1)) + seg_linear(u)
             """
             # Parse interval_size from the name
-            # Example: sem_name = "seg_linear_0.2" => interval_size=0.2
-            interval_str = sem_name.replace("seg_linear_", "")
+            # Example: sem_name = "seg-linear-0.2" => interval_size=0.2
+            interval_str = sem_name.replace("seg-linear-", "")
             interval_size = float(interval_str)
 
             # c1, c2 define the "flat" region around 0.5
@@ -58,58 +62,59 @@ class Triangle(SEM):
             # g(u): segmented linear
             def seg_linear(u):
                 """
-                g(u) =
-                  u,                  if u < c1,
-                  c1,                 if c1 <= u < c2,
-                  u - (c2 - c1),      if u >= c2.
+                g(u) =  u,                  if u < c1
+                        c1,                 if c1 <= u < c2
+                        u - (c2 - c1),      if u >= c2
+                for each element in tensor u.
                 """
-                if u < c1:
-                    return u
-                elif u < c2:
-                    return c1
-                else:
-                    return u - (c2 - c1)
+                out = u.clone()  # copy so we don’t modify in-place
+
+                # mask where u is in [c1, c2)
+                mask_middle = (u >= c1) & (u < c2)
+                out[mask_middle] = c1
+
+                # mask where u is >= c2
+                mask_upper = u >= c2
+                out[mask_upper] = u[mask_upper] - (c2 - c1)
+
+                # else, out remains = u (for u < c1)
+                return out
 
             # Helper to invert y = seg_linear(u).
             # We find all u in [0,1] such that seg_linear(u) = y.
-            def seg_linear_inverse(y):
+            def seg_linear_inverse_vec(y, c1, c2, eps=1e-9):
                 """
-                Returns one valid u in [0,1] chosen randomly among
-                all solutions to seg_linear(u) = y.
-                Raises an error if no solutions.
+                Vectorized inverse of seg_linear:
+                We find a single valid u for each element of y.
+
+                - If y < c1 => u = y
+                - If |y - c1| < eps => u is in [c1, c2), pick random in that interval
+                - If y > c1 => u = y + (c2 - c1)
+
+                We'll produce one chosen solution for each batch element y[i].
                 """
-                candidates = []
+                # Prepare output, same shape as y
+                out = torch.empty_like(y)
 
-                # 1) If y < c1, then u = y is a direct solution if it is in [0,1].
-                if y < c1 and 0.0 <= y <= 1.0:
-                    candidates.append(y)
+                # (1) mask_low => y < c1 => u = y
+                mask_low = y < c1
+                out[mask_low] = y[mask_low]
 
-                # 2) If y == c1, then ANY u in [c1, c2) maps to c1.
-                #    We intersect that with [0,1].
-                eps = 1e-9
-                if abs(y - c1) < eps:
-                    lower = max(c1, 0.0)
-                    upper = min(c2, 1.0)
-                    if lower < upper:
-                        # pick randomly from [lower, upper)
-                        # (or you might pick from [lower, upper], up to you)
-                        candidates.append(random.uniform(lower, upper))
+                # (2) mask_eq => y ~ c1 => pick random in [c1, c2)
+                mask_eq = (y - c1).abs() < eps
+                num_eq = mask_eq.sum()
+                if num_eq > 0:
+                    lower = c1
+                    upper = c2
+                    # random in [lower, upper)
+                    rand_vals = torch.rand(num_eq, device=y.device, dtype=y.dtype)
+                    out[mask_eq] = lower + (upper - lower) * rand_vals
 
-                # 3) If y > c1, then we can solve u = y + (c2 - c1),
-                #    must lie in [0,1].
-                if y > c1:
-                    u_candidate = y + (c2 - c1)
-                    if 0.0 <= u_candidate <= 1.0:
-                        candidates.append(u_candidate)
+                # (3) mask_high => y > c1 => u = y + (c2 - c1)
+                mask_high = y > c1
+                out[mask_high] = y[mask_high] + (c2 - c1)
 
-                # Remove duplicates, if any.
-                candidates = list(set(candidates))
-
-                if len(candidates) == 0:
-                    raise ValueError(f"No solution u in [0,1] for seg_linear(u)={y}.")
-
-                # Randomly pick one from the valid set
-                return random.choice(candidates)
+                return out
 
             # The structural equations (non-linear):
             def f1(u1):

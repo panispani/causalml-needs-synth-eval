@@ -15,7 +15,6 @@ class CausalNormalizingFlow(nn.Module):
         self.flow = flow
         self.adjacency = None
 
-
     def set_adjacency(self, adj):
         self.adjacency = adj
 
