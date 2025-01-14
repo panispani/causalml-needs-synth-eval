@@ -83,8 +83,11 @@ class CausalNFightning(BaseLightning):
         output = {}
         x = batch[0].to(self.device)
         n = x.shape[0]
+
+        use_inverses_in_train = True
         with torch.enable_grad():
-            output["log_prob_true"] = self.preparator.log_prob(x)
+            if use_inverses_in_train:
+                output["log_prob_true"] = self.preparator.log_prob(x)
 
         tic = time.time()
         log_prob = self.model.log_prob(x, scaler=self.preparator.scaler_transform)
@@ -104,18 +107,19 @@ class CausalNFightning(BaseLightning):
                 output["x_obs"] = self.preparator.post_process(x_obs)
             mmd_value = maximum_mean_discrepancy(x, x_obs, sigma=None)
             output[f"mmd_obs"] = mmd_value
-            with torch.enable_grad():
-                log_p_with_x_sample = self.preparator.log_prob(x_obs)
-                log_p_with_x = self.preparator.log_prob(x)
-            output["log_prob_p"] = log_p_with_x_sample
-            log_q_with_x_sample = self.model.log_prob(
-                x_obs, scaler=self.preparator.scaler_transform
-            )
+            if use_inverses_in_train:
+                with torch.enable_grad():
+                    log_p_with_x_sample = self.preparator.log_prob(x_obs)
+                    log_p_with_x = self.preparator.log_prob(x)
+                output["log_prob_p"] = log_p_with_x_sample
+                log_q_with_x_sample = self.model.log_prob(
+                    x_obs, scaler=self.preparator.scaler_transform
+                )
 
-            kl_distance = (
-                log_p_with_x + log_q_with_x_sample - log_p_with_x_sample - log_prob
-            )
-            output["kl_distance"] = kl_distance
+                kl_distance = (
+                    log_p_with_x + log_q_with_x_sample - log_p_with_x_sample - log_prob
+                )
+                output["kl_distance"] = kl_distance
 
         if intervene:
             intervention_list = self.preparator.get_intervention_list()
@@ -133,7 +137,6 @@ class CausalNFightning(BaseLightning):
                 )
                 delta_times.append(self.compute_time(tic, n))
 
-
                 if self.plot:
                     output[f"x_int_{index + 1}={name}"] = self.preparator.post_process(
                         x_int
@@ -143,9 +146,9 @@ class CausalNFightning(BaseLightning):
                     index=index, value=value, shape=(n,)
                 )
                 if self.plot:
-                    output[
-                        f"x_int_{index + 1}={name}_true"
-                    ] = self.preparator.post_process(x_int_true)
+                    output[f"x_int_{index + 1}={name}_true"] = (
+                        self.preparator.post_process(x_int_true)
+                    )
 
                 mmd_value = maximum_mean_discrepancy(x_int, x_int_true, sigma=None)
                 output[f"mmd_int_x{index + 1}={name}"] = mmd_value
