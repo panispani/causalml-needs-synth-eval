@@ -129,79 +129,39 @@ class Triangle(SEM):
             functions = [f1, f2, f3]
 
             # Now their inverses:
-            #   f1(x1) = seg_linear(u1) => u1 in the set of solutions to seg_linear(u1)=x1
-            inv_f1 = lambda x1: seg_linear_inverse(float(x1))
+            #   f1(x1) = seg_linear(u1) => seg_linear(u1) = x1 => u1 in [0,1]
+            def inv_f1(x1):
+                # x1 is a Tensor => we do a vector call
+                return seg_linear_inverse_vec(x1, c1, c2)
 
-            #   f2(x1, x2) = 2*x1^2 + seg_linear(u2)
-            #        => seg_linear(u2) = x2 - 2*x1^2
             def inv_f2(x1, x2):
-                val = float(x2 - 2.0 * x1**2)
-                return seg_linear_inverse(val)
+                # seg_linear(u2) = x2 - 2*x1^2
+                val = x2 - 2.0 * x1**2
+                return seg_linear_inverse_vec(val, c1, c2)
 
-            #   f3(x1, x2, x3) = 20/(1+exp(-(x2^2)+x1)) + seg_linear(u3)
-            #        => seg_linear(u3) = x3 - 20/(1+exp(-(x2^2)+x1))
             def inv_f3(x1, x2, x3):
-                val = float(x3 - 20.0 / (1.0 + torch.exp(-(x2**2) + x1)))
-                return seg_linear_inverse(val)
+                base = 20.0 / (1.0 + torch.exp(-(x2**2) + x1))
+                val = x3 - base
+                return seg_linear_inverse_vec(val, c1, c2)
 
             # Don't think that CausalNF should need this.
-            # inverses = [inv_f1, inv_f2, inv_f3]
-        elif sem_name.startswith("sinusoid_"):
+            inverses = [inv_f1, inv_f2, inv_f3]
+            # inverses = [None, None, None]  # Required by SEM(ABC)
+
+        elif sem_name.startswith("sinusoid-"):
             """
-            "sinusoid_<f>": sinusoidal noise
+            "sinusoid-<f>": sinusoidal noise
             """
             # Parse frequency f
-            freq_str = sem_name.replace("sinusoid_", "")
+            freq_str = sem_name.replace("sinusoid-", "")
             f_freq = float(freq_str)
 
             # g(u) = sin(2 pi f_freq u)
             def sinusoid(u):
+                # pi_tensor = torch.tensor(math.pi)  # Constant as a tensor
+                # f_freq_tensor = torch.tensor(f_freq)  # Constant as a tensor
+                # return torch.sin(2.0 * pi_tensor * f_freq_tensor * u)
                 return torch.sin(2.0 * math.pi * f_freq * u)
-
-            # Helper: invert y = sin(2 pi f_freq u), find all solutions in [0,1].
-            def sinusoid_inverse(y):
-                """
-                Solve sin(2 pi f_freq * u) = y for u in [0,1].
-                We'll gather all solutions in [0,1], pick one at random.
-                If no solutions, raise ValueError.
-                """
-                # If y not in [-1,1], no solutions
-                if y < -1.0 or y > 1.0:
-                    raise ValueError(
-                        f"sinusoid_inverse: no solutions for y={y} outside [-1,1]."
-                    )
-
-                # arcsin(y) in [-pi/2, pi/2]
-                alpha = math.asin(y)
-                # general solutions: alpha + 2 pi k,  pi - alpha + 2 pi k
-                #  => 2 pi f_freq u = alpha + 2 pi k   OR   2 pi f_freq u = pi - alpha + 2 pi k
-                #  => u = [alpha + 2 pi k] / [2 pi f_freq] , etc.
-
-                candidates = []
-                # We test integer k in some range.  The frequency can be large, so be generarous when picking k
-                # These are the general solutions basically.
-                for k in range(-20, 21):
-                    # first root: alpha + 2 pi k
-                    u_candidate1 = (alpha + 2 * math.pi * k) / (2 * math.pi * f_freq)
-                    # second root: (pi - alpha) + 2 pi k
-                    u_candidate2 = (math.pi - alpha + 2 * math.pi * k) / (
-                        2 * math.pi * f_freq
-                    )
-
-                    # check if within [0,1]
-                    if 0.0 <= u_candidate1 <= 1.0:
-                        candidates.append(u_candidate1)
-                    if 0.0 <= u_candidate2 <= 1.0:
-                        candidates.append(u_candidate2)
-
-                # remove duplicates, sort if you like
-                candidates = list(set(candidates))  # unique
-                if len(candidates) == 0:
-                    raise ValueError(
-                        f"No solution u in [0,1] for sin(2 pi * {f_freq} * u)={y}."
-                    )
-
-                return random.choice(candidates)
 
             # The structural equations (non-linear) with sinusoidal noise:
             def f1(u1):
@@ -215,22 +175,128 @@ class Triangle(SEM):
 
             functions = [f1, f2, f3]
 
-            # Inverses
-            inv_f1 = lambda x1: sinusoid_inverse(float(x1))
+            # Helper: invert y = sin(2 pi f_freq u)
+            def old_sinusoid_inverse_scalar(y_elem, f_freq):
+                """
+                Solve sin(2 pi f_freq * u) = y_elem for real u.
+                We'll gather solutions for k in [-20..20],
+                then pick one at random. This yields a random real solution,
+                since there's an infinite number in theory.
+                """
+                # Must have y in [-1,1] or no real solution:
+                if y_elem < -1.0 or y_elem > 1.0:
+                    # No real solutions
+                    raise "NONONONO"
+                    return float("nan")  # or raise ValueError
+
+                alpha = math.asin(y_elem)
+                candidates = []
+                for k in range(-20, 21):
+                    # root1: alpha + 2 pi k => u = (alpha + 2 pi k)/(2 pi f_freq)
+                    u1 = (alpha + 2.0 * math.pi * k) / (2.0 * math.pi * f_freq)
+                    candidates.append(u1)
+                    # root2: pi - alpha + 2 pi k => u = (pi - alpha + 2 pi k)/(2 pi f_freq)
+                    beta = math.pi - alpha
+                    u2 = (beta + 2.0 * math.pi * k) / (2.0 * math.pi * f_freq)
+                    candidates.append(u2)
+
+                # pick a random solution among the unique ones
+                candidates = list(set(candidates))
+                if not candidates:
+                    raise ("NONONONO")
+                    return float("nan")
+                return random.choice(candidates)
+
+            def old_sinusoid_inverse_vec(y, f_freq):
+                """
+                Vectorized approach: For each y[i], we find
+                sin(2 pi f_freq * u)=y[i] solutions and pick one at random.
+                Return a Tensor of the same shape as y.
+                """
+                out = torch.empty_like(y)
+                y_np = y.detach().cpu().numpy()
+                for i in range(len(y_np)):
+                    out[i] = old_sinusoid_inverse_scalar(y_np[i], f_freq)
+                return out.to(y.device)
+
+            def sinusoid_inverse_vec(y, f_freq):
+                """
+                Vectorized approach: For each y[i], solve sin(2 pi f_freq * u) = y[i].
+                We'll gather solutions for k in [-20..20], then pick one at random.
+
+                This is a purely torch-based version that avoids numpy and math.asin,
+                instead using torch.asin and broadcasting.
+                """
+                # 1) y must be in [-1, 1], or else asin is not real
+                #    Let's clamp or raise an error if needed
+                if torch.any(y < -1.0) or torch.any(y > 1.0):
+                    torch.set_printoptions(threshold=100_000)
+                    # # print(y)
+                    # for i in range(y.shape[0]):
+                    #     if y[i] > 1 or y[i] < -1:
+                    #         print(y[i])
+                    raise ValueError(
+                        "Input out of domain [-1, 1]. Cannot invert sin()."
+                    )
+
+                # 2) Compute alpha = arcsin(y).
+                #    This is a tensor, same shape as y, with requires_grad=True if y does.
+                alpha = torch.asin(y)  # shape (N,)
+
+                # 3) Create the integer k values as a 1D tensor: [-20, ..., 20]
+                k_values = torch.arange(
+                    -20, 21, device=y.device, dtype=y.dtype
+                )  # shape (41,)
+
+                # We'll broadcast alpha to shape (N, 1)
+                alpha_expanded = alpha.unsqueeze(-1)  # shape (N, 1)
+
+                # 4) root1 = (alpha + 2 pi k) / (2 pi f_freq)
+                #    root2 = (pi - alpha + 2 pi k) / (2 pi f_freq)
+                two_pi = 2.0 * math.pi
+                numerator1 = alpha_expanded + two_pi * k_values  # shape (N, 41)
+                root1 = numerator1 / (two_pi * f_freq)  # shape (N, 41)
+
+                beta = math.pi - alpha_expanded  # shape (N, 1)
+                numerator2 = beta + two_pi * k_values  # shape (N, 41)
+                root2 = numerator2 / (two_pi * f_freq)  # shape (N, 41)
+
+                # 5) Combine them into one big (N, 82) tensor of candidate solutions
+                candidates = torch.cat([root1, root2], dim=-1)  # shape (N, 82)
+
+                # 6) Randomly pick exactly one solution from these 82 for each batch element
+                #    (If you want a deterministic branch, you'd pick, for example, k=0 root1.)
+                num_candidates = candidates.shape[1]  # 82
+                N = candidates.shape[0]
+
+                # Generate random indices in [0, num_candidates)
+                # shape (N,)
+                random_indices = torch.randint(
+                    low=0, high=num_candidates, size=(N,), device=y.device
+                )
+
+                # Gather the chosen solutions => shape (N,)
+                # This is done with advanced indexing:
+                idx_rows = torch.arange(N, device=y.device)
+                out = candidates[idx_rows, random_indices]
+
+                return out
+
+            def inv_f1(x1):
+                return sinusoid_inverse_vec(x1, f_freq)
 
             def inv_f2(x1, x2):
-                # y = x2 - 2*x1^2
-                val = float(x2 - 2.0 * x1**2)
-                return sinusoid_inverse(val)
+                val = x2 - 2.0 * x1**2
+                return sinusoid_inverse_vec(val, f_freq)
 
             def inv_f3(x1, x2, x3):
-                # y = x3 - 20/(1 + exp(-(x2^2) + x1))
                 base = 20.0 / (1.0 + torch.exp(-(x2**2) + x1))
-                val = float(x3 - base)
-                return sinusoid_inverse(val)
+                val = x3 - base
+                return sinusoid_inverse_vec(val, f_freq)
 
             # I think causalNF shouldn't need this
-            # inverses = [inv_f1, inv_f2, inv_f3]
+            inverses = [inv_f1, inv_f2, inv_f3]
+            # inverses = [None, None, None]
 
         super().__init__(functions, inverses, sem_name)
 
