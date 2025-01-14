@@ -17,8 +17,8 @@ from causal_nf.utils.struct import Struct
 plt.rcParams.update(bundles.icml2022())
 
 
-def select_root(idx=0, regex_filter='output'):
-    folders = pb_io.list_folders('.', add_default='', regex_filter=regex_filter)
+def select_root(idx=0, regex_filter="output"):
+    folders = pb_io.list_folders(".", add_default="", regex_filter=regex_filter)
     for i, f in enumerate(folders):
         print(f"[{i}] {f}")
 

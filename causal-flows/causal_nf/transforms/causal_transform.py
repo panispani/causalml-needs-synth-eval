@@ -74,9 +74,7 @@ class CausalEquations(CausalTransform):
 
         return -torch.stack(logdetjac, dim=-1)
 
-    def _log_abs_det_jacobian_autodiff(
-        self, u: Tensor, x: Tensor
-    ) -> Tensor:
+    def _log_abs_det_jacobian_autodiff(self, u: Tensor, x: Tensor) -> Tensor:
         logdetjac = []
         old_requires_grad = x.requires_grad
         x.requires_grad_(True)
