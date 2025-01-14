@@ -1,0 +1,35 @@
+name: gen
+channels:
+  - defaults
+  - conda-forge
+  - pytorch
+  - r
+dependencies:
+  - cython        # needs to be installed before POT
+  - matplotlib
+  - numpy         # needs to be installed before POT
+  - pandas
+  - pip
+  - pytest
+  - python=3
+  - pytorch
+  - seaborn
+  - statsmodels
+  - torchvision
+  - rpy2
+  - r-base
+  - r-essentials
+  - r-rgenoud
+  - r-matching
+  - pip:
+    - addict
+    - causallib
+    - comet_ml
+    - econml
+    - git+git://github.com/bradyneal/torch-two-sample
+    - gpytorch
+    - POT
+    - pyro-ppl    # not necessary if not using Pyro
+    - whynot
+    - whynot_estimators
+prefix: /anaconda3/envs/gen

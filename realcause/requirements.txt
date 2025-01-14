@@ -1,0 +1,16 @@
+addict
+causallib
+comet-ml
+matplotlib
+numpy
+pandas
+pytest
+requests
+scikit-learn
+scipy
+seaborn
+statsmodels
+torch
+torchvision
+tqdm
+gpytorch
