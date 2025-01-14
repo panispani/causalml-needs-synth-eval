@@ -49,9 +49,10 @@ keep_cols.append("train__regularize")
 
 # %% Load dataframes
 exp_folders = [
-    "comparison_x_u",
-    "comparison_u_x",
-    "comparison_carefl",
+    "seg_lin_fun",
+    # "comparison_x_u",
+    # "comparison_u_x",
+    # "comparison_carefl",
     # 'comparison_largebd'
 ]
 df_all_last_list = []
@@ -172,6 +173,6 @@ df_table = df_table.loc[:, df_table.columns.get_level_values(0).isin(metrics_col
 
 # %%
 
-filename = os.path.join(folder, "comparison_flows.pickle")
+filename = os.path.join(folder, "comparison_flows_seg_lin_fun.pickle")
 print("Saving to {}".format(filename))
 df_table.to_pickle(filename)
