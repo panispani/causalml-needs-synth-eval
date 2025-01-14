@@ -68,6 +68,7 @@ watch -n1 tail output_causal_nf_jobs.log
 
 # Plotting table 2
 # Note that if you didn't run everything and only for example this one, you need to edit line 59 from `for exp_folder in exp_folders:` to `for exp_folder in exp_folders[:1]:`
+# exp_folders should include all the folders you want (you need to add more if you add more experiments)
 python scripts/create_comparison_flows.py
 
 # Print the table
@@ -78,3 +79,18 @@ python -c "import pandas as pd; pd.set_option('display.max_columns', None); pd.s
 ```
 
 ## Repeat the same as above for VACA and CAREFL as specified in the README.md (or trust yourself and edit the commands of the previous section manually).
+
+5. Run your own experiment
+
+Add your own SCMs in `causal_nf/sem_equations`.
+
+Create your own directory in place of `causal-flows/grids/causal_nf/comparison_x_u` (& experiment setup in yaml files)
+
+The steps are then the same as before. 1) Generate the jobs 2) bash execute them 3) create comparison flows 4) Print the table
+
+## Misc
+
+```bash
+# Load a model and test only
+python main.py --config_file grids/causal_nf/robustness/base/configs/1/config_1.yaml --wandb_mode offline --wandb_group robustness --project Test --load_model /home/pani/causality-benchmarking/causal-flows/output_causal_nf/robustness/l6b0en36/
+```
