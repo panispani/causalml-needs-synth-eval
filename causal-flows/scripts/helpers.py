@@ -127,7 +127,7 @@ def update_names(df, column_mapping=None, model="flow"):
     mapping["linear"] = "LIN"
     mapping["non-linear"] = "NLIN"
     mapping["sym-prod"] = "NLIN2"
-    df_tmp["dataset__sem_name"] = df_tmp["dataset__sem_name"].map(mapping)
+    # df_tmp["dataset__sem_name"] = df_tmp["dataset__sem_name"].map(mapping)
     mapping = {}
 
     for dataset_name in df_tmp.dataset__name.unique():
