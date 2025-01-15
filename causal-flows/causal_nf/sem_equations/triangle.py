@@ -214,7 +214,7 @@ class Triangle(SEM):
                 We find a single valid u for each element of y.
 
                 - If y < c1 => u = y
-                - If |y - c1| < eps => u is in [c1, c2), pick the lowest point c1 in the interval (used to be random)
+                - If |y - c1| < eps => u is in [c1, c2), pick random in that interval
                 - If y > c1 => u = y + (c2 - c1)
 
                 We'll produce one chosen solution for each batch element y[i].
@@ -226,17 +226,15 @@ class Triangle(SEM):
                 mask_low = y < c1
                 out[mask_low] = y[mask_low]
 
-                # (2) mask_eq => y ~ c1 => pick "random" in [c1, c2) - now instead of random, pick lowest
+                # (2) mask_eq => y ~ c1 => pick random in [c1, c2)
                 mask_eq = (y - c1).abs() < eps
                 num_eq = mask_eq.sum()
                 if num_eq > 0:
                     lower = c1
                     upper = c2
                     # random in [lower, upper)
-                    # rand_vals = torch.rand(num_eq, device=y.device, dtype=y.dtype)
-                    # out[mask_eq] = lower + (upper - lower) * rand_vals
-                    # Set to the lowest point c1 instead of doing it at random.
-                    out[mask_eq] = lower
+                    rand_vals = torch.rand(num_eq, device=y.device, dtype=y.dtype)
+                    out[mask_eq] = lower + (upper - lower) * rand_vals
 
                 # (3) mask_high => y > c1 => u = y + (c2 - c1)
                 mask_high = y > c1
