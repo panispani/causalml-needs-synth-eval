@@ -42,6 +42,132 @@ class Triangle(SEM):
                 lambda x1, x2: (10 * x1**0.5 - x2),
                 lambda x1, x2, x3: (x3 - 0.5 * x2 - +1 / (1.0 + x1)) / 1.0,
             ]
+        # -------------------------------------------------------
+        # ctf1
+        # x1 = u1
+        # x2 = { u2,    if x1 >= 0
+        #       u2 - 1, if x1 < 0 }
+        # x3 = u3 + x2
+        # -------------------------------------------------------
+        elif sem_name == "ctf1":
+            functions = [
+                lambda u1: u1,
+                lambda x1, u2: torch.where(x1 >= 0, u2, u2 - 1),
+                lambda x1, x2, u3: x2 + u3,
+            ]
+            inverses = [
+                # Given x1 => u1 = x1
+                lambda x1: x1,
+                # Given x1, x2 => solve for u2:
+                #    if x1 >= 0: x2 = u2 => u2 = x2
+                #    else:       x2 = u2 - 1 => u2 = x2 + 1
+                lambda x1, x2: torch.where(x1 >= 0, x2, x2 + 1),
+                # Given x2, x3 => x3 = x2 + u3 => u3 = x3 - x2
+                lambda x1, x2, x3: x3 - x2,
+            ]
+
+        # -------------------------------------------------------
+        # ctf2
+        # x1 = u1
+        # x2 = { u2,    if x1 >= 0
+        #       -u2,    if x1 < 0 }
+        # x3 = u3 + x2
+        # -------------------------------------------------------
+        elif sem_name == "ctf2":
+            functions = [
+                lambda u1: u1,
+                lambda x1, u2: torch.where(x1 >= 0, u2, -u2),
+                lambda x1, x2, u3: x2 + u3,
+            ]
+            inverses = [
+                # Given x1 => u1 = x1
+                lambda x1: x1,
+                # Given x1, x2 => solve for u2:
+                #    if x1 >= 0: x2 = u2 => u2 = x2
+                #    else:       x2 = -u2 => u2 = -x2
+                lambda x1, x2: torch.where(x1 >= 0, x2, -x2),
+                # Given x2, x3 => x3 = x2 + u3 => u3 = x3 - x2
+                lambda x1, x2, x3: x3 - x2,
+            ]
+        # -------------------------------------------------------
+        # ctf3
+        # x1 = u1
+        # x2 = { u2,    if x1 >= 0
+        #       u2 - 1, if x1 < 0 }
+        # x3 = { u3,    if x2 >= 0
+        #       u3 - 1, if x2 < 0 }
+        # -------------------------------------------------------
+        elif sem_name == "ctf3":
+            functions = [
+                lambda u1: u1,
+                lambda x1, u2: torch.where(x1 >= 0, u2, u2 - 1),
+                lambda x1, x2, u3: torch.where(x2 >= 0, u3, u3 - 1),
+            ]
+            inverses = [
+                lambda x1: x1,
+                lambda x1, x2: torch.where(x1 >= 0, x2, x2 + 1),
+                lambda x1, x2, x3: torch.where(x2 >= 0, x3, x3 + 1),
+            ]
+
+        # -------------------------------------------------------
+        # ctf4
+        # x1 = u1
+        # x2 = { u2,    if x1 >= 0
+        #       -u2,    if x1 < 0 }
+        # x3 = { u3,    if x2 >= 0
+        #       -u3,    if x2 < 0 }
+        # -------------------------------------------------------
+        elif sem_name == "ctf4":
+            functions = [
+                lambda u1: u1,
+                lambda x1, u2: torch.where(x1 >= 0, u2, -u2),
+                lambda x1, x2, u3: torch.where(x2 >= 0, u3, -u3),
+            ]
+            inverses = [
+                lambda x1: x1,
+                lambda x1, x2: torch.where(x1 >= 0, x2, -x2),
+                lambda x1, x2, x3: torch.where(x2 >= 0, x3, -x3),
+            ]
+
+        # -------------------------------------------------------
+        # ctf5
+        # x1 = u1
+        # x2 = { u2,    if x1 >= 0
+        #       u2 - 1, if x1 < 0 }
+        # x3 = { u3,    if x2 >= 0
+        #       -u3,    if x2 < 0 }
+        # -------------------------------------------------------
+        elif sem_name == "ctf5":
+            functions = [
+                lambda u1: u1,
+                lambda x1, u2: torch.where(x1 >= 0, u2, u2 - 1),
+                lambda x1, x2, u3: torch.where(x2 >= 0, u3, -u3),
+            ]
+            inverses = [
+                lambda x1: x1,
+                lambda x1, x2: torch.where(x1 >= 0, x2, x2 + 1),
+                lambda x1, x2, x3: torch.where(x2 >= 0, x3, -x3),
+            ]
+
+        # -------------------------------------------------------
+        # ctf6
+        # x1 = u1
+        # x2 = { u2,    if x1 >= 0
+        #       -u2,    if x1 < 0 }
+        # x3 = { u3,    if x2 >= 0
+        #       u3 - 1, if x2 < 0 }
+        # -------------------------------------------------------
+        elif sem_name == "ctf6":
+            functions = [
+                lambda u1: u1,
+                lambda x1, u2: torch.where(x1 >= 0, u2, -u2),
+                lambda x1, x2, u3: torch.where(x2 >= 0, u3, u3 - 1),
+            ]
+            inverses = [
+                lambda x1: x1,
+                lambda x1, x2: torch.where(x1 >= 0, x2, -x2),
+                lambda x1, x2, x3: torch.where(x2 >= 0, x3, x3 + 1),
+            ]
         elif sem_name.startswith("seg-linear-"):
             """
             "seg-linear-<interval_size>": piecewise linear noise around 0.5,
