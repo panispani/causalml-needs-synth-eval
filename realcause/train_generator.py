@@ -343,6 +343,7 @@ def get_args():
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--num_epochs", type=int, default=100)
+    # "Early stopping" means don't train but load best-val-loss model, see models/nonlinear.py::train
     parser.add_argument("--early_stop", type=eval, default=True, choices=[True, False])
     parser.add_argument("--patience", type=int)
 
