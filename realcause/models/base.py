@@ -8,7 +8,15 @@ from typing import Type
 
 from models.preprocess import Preprocess, PlaceHolderTransform
 from plotting.plotting import compare_joints, compare_bivariate_marginals
-from utils import T, Y, to_np_vectors, to_np_vector, to_torch_variable, permutation_test, regular_round
+from utils import (
+    T,
+    Y,
+    to_np_vectors,
+    to_np_vector,
+    to_torch_variable,
+    permutation_test,
+    regular_round,
+)
 
 MODEL_LABEL = "model"
 TRUE_LABEL = "true"
@@ -68,15 +76,31 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         y - outcomes from real data
     """
 
-    abstract_attributes = ['w', 't', 'y',
-                           'w_transformed', 't_transformed', 'y_transformed']
+    abstract_attributes = [
+        "w",
+        "t",
+        "y",
+        "w_transformed",
+        "t_transformed",
+        "y_transformed",
+    ]
 
-    def __init__(self, w, t, y, train_prop=1, val_prop=0, test_prop=0,
-                 test_size=None, shuffle=True, seed=SEED,
-                 w_transform: Type[Preprocess] = PlaceHolderTransform,
-                 t_transform: Type[Preprocess] = PlaceHolderTransform,
-                 y_transform: Type[Preprocess] = PlaceHolderTransform,
-                 verbose=True):
+    def __init__(
+        self,
+        w,
+        t,
+        y,
+        train_prop=1,
+        val_prop=0,
+        test_prop=0,
+        test_size=None,
+        shuffle=True,
+        seed=SEED,
+        w_transform: Type[Preprocess] = PlaceHolderTransform,
+        t_transform: Type[Preprocess] = PlaceHolderTransform,
+        y_transform: Type[Preprocess] = PlaceHolderTransform,
+        verbose=True,
+    ):
         """
         Initialize the generative model. Split the data up according to the
         splits specified by train_prop, val_prop, and test_prop. These can add
@@ -125,8 +149,8 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         if shuffle:
             np.random.shuffle(idxs)
         train_idxs = idxs[:n_train]
-        val_idxs = idxs[n_train:n_train + n_val]
-        test_idxs = idxs[n_train + n_val:]
+        val_idxs = idxs[n_train : n_train + n_val]
+        test_idxs = idxs[n_train + n_val :]
 
         print("test_idxs: ", test_idxs.shape)
 
@@ -180,9 +204,11 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
 
         assert w.shape[0] == t.shape[0] == y.shape[0]
         if w.shape[0] == 0:
-            raise ValueError('Dataset "{}" has 0 examples in it. Please '
-                             'increase the value of the corresponding argument '
-                             'in the constructor.'.format(dataset))
+            raise ValueError(
+                'Dataset "{}" has 0 examples in it. Please '
+                "increase the value of the corresponding argument "
+                "in the constructor.".format(dataset)
+            )
 
         if transformed:
             w = self.w_transform.transform(w)
@@ -206,7 +232,7 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
                 return self.w_val
             else:
                 return self.w
-                    
+
         else:
             if dataset == TEST:
                 return self.w_test_transformed
@@ -214,8 +240,6 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
                 return self.w_val_transformed
             else:
                 return self.w_transformed
-
-
 
     @abstractmethod
     def _sample_t(self, w, overlap=1):
@@ -253,8 +277,16 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         else:
             return t
 
-    def sample_y(self, t, w, untransform=True, causal_effect_scale=None,
-                 deg_hetero=1.0, ret_counterfactuals=False, seed=None):
+    def sample_y(
+        self,
+        t,
+        w,
+        untransform=True,
+        causal_effect_scale=None,
+        deg_hetero=1.0,
+        ret_counterfactuals=False,
+        seed=None,
+    ):
         """
         :param t: treatment
         :param w: covariate (confounder)
@@ -278,12 +310,16 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
             y0 = self.y_transform.untransform(y0)
             y1 = self.y_transform.untransform(y1)
 
-        if deg_hetero == 1.0 and causal_effect_scale == None:  # don't change heterogeneity or causal effect size
+        if (
+            deg_hetero == 1.0 and causal_effect_scale == None
+        ):  # don't change heterogeneity or causal effect size
             pass
-        else:   # change degree of heterogeneity and/or causal effect size
+        else:  # change degree of heterogeneity and/or causal effect size
             # degree of heterogeneity
             if deg_hetero != 1.0:
-                assert 0 <= deg_hetero < 1, f'deg_hetero not in [0, 1], got {deg_hetero}'
+                assert (
+                    0 <= deg_hetero < 1
+                ), f"deg_hetero not in [0, 1], got {deg_hetero}"
                 y1_mean = y1.mean()
                 y0_mean = y0.mean()
                 ate = y1_mean - y0_mean
@@ -292,15 +328,21 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
                 # further from its mean) to when deg_hetero = 0
                 further_y1 = np.greater(np.abs(y1 - y1_mean), np.abs(y0 - y0_mean))
                 further_y0 = np.logical_not(further_y1)
-                alpha = np.random.rand(len(y1))  # how far to shrink y1 toward y1_mean or y0 toward y0_mean
+                alpha = np.random.rand(
+                    len(y1)
+                )  # how far to shrink y1 toward y1_mean or y0 toward y0_mean
                 y1_limit = further_y1 * ((1 - alpha) * y1 + alpha * y1_mean)
                 y0_limit = further_y0 * ((1 - alpha) * y0 + alpha * y0_mean)
 
                 # shrink y1 (or y0) and calculate corresponding y0 or (y1) based on
                 scaled_y1 = (1 - deg_hetero) * y1_limit + deg_hetero * y1 * further_y1
-                corresponding_y0 = (1 - deg_hetero) * (scaled_y1 - ate) + deg_hetero * y0 * further_y1
+                corresponding_y0 = (1 - deg_hetero) * (
+                    scaled_y1 - ate
+                ) + deg_hetero * y0 * further_y1
                 scaled_y0 = (1 - deg_hetero) * y0_limit + deg_hetero * y0 * further_y0
-                corresponding_y1 = (1 - deg_hetero) * (scaled_y0 + ate) + deg_hetero * y1 * further_y0
+                corresponding_y1 = (1 - deg_hetero) * (
+                    scaled_y0 + ate
+                ) + deg_hetero * y1 * further_y0
                 y1 = scaled_y1 * further_y1 + corresponding_y1 * further_y0
                 y0 = scaled_y0 * further_y0 + corresponding_y0 * further_y1
 
@@ -319,8 +361,18 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         torch.manual_seed(seed)
         np.random.seed(seed)
 
-    def sample(self, w=None, transform_w=True, untransform=True, seed=None, dataset=TRAIN, overlap=1,
-               causal_effect_scale=None, deg_hetero=1.0, ret_counterfactuals=False):
+    def sample(
+        self,
+        w=None,
+        transform_w=True,
+        untransform=True,
+        seed=None,
+        dataset=TRAIN,
+        overlap=1,
+        causal_effect_scale=None,
+        deg_hetero=1.0,
+        ret_counterfactuals=False,
+    ):
         """
         Sample from generative model.
 
@@ -349,42 +401,88 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         t = self.sample_t(w, untransform=False, overlap=overlap)
         if ret_counterfactuals:
             y0, y1 = self.sample_y(
-                t, w, untransform=False, causal_effect_scale=causal_effect_scale,
-                deg_hetero=deg_hetero, ret_counterfactuals=True
+                t,
+                w,
+                untransform=False,
+                causal_effect_scale=causal_effect_scale,
+                deg_hetero=deg_hetero,
+                ret_counterfactuals=True,
             )
             if untransform:
-                return (self.w_transform.untransform(w), self.t_transform.untransform(t),
-                        (self.y_transform.untransform(y0), self.y_transform.untransform(y1)))
+                return (
+                    self.w_transform.untransform(w),
+                    self.t_transform.untransform(t),
+                    (
+                        self.y_transform.untransform(y0),
+                        self.y_transform.untransform(y1),
+                    ),
+                )
             else:
                 return w, t, (y0, y1)
         else:
-            y = self.sample_y(t, w, untransform=False,
-                              causal_effect_scale=causal_effect_scale,
-                              deg_hetero=deg_hetero, ret_counterfactuals=False)
+            y = self.sample_y(
+                t,
+                w,
+                untransform=False,
+                causal_effect_scale=causal_effect_scale,
+                deg_hetero=deg_hetero,
+                ret_counterfactuals=False,
+            )
             if untransform:
-                return self.w_transform.untransform(w), self.t_transform.untransform(t), self.y_transform.untransform(y)
+                return (
+                    self.w_transform.untransform(w),
+                    self.t_transform.untransform(t),
+                    self.y_transform.untransform(y),
+                )
             else:
                 return w, t, y
 
-    def sample_interventional(self, t, w=None, seed=None, causal_effect_scale=None, deg_hetero=1.0):
+    def sample_interventional(
+        self, t, w=None, seed=None, causal_effect_scale=None, deg_hetero=1.0
+    ):
         if seed is not None:
             self.set_seed(seed)
         if w is None:
             w = self.sample_w(untransform=False)
         if isinstance(w, Number):
-            raise ValueError('Unsupported data type: {} ... only numpy is currently supported'.format(type(w)))
+            raise ValueError(
+                "Unsupported data type: {} ... only numpy is currently supported".format(
+                    type(w)
+                )
+            )
         if isinstance(t, Number):
             t = np.full_like(self.t, t)
-        return self.sample_y(t, w, causal_effect_scale=causal_effect_scale, deg_hetero=deg_hetero)
+        return self.sample_y(
+            t, w, causal_effect_scale=causal_effect_scale, deg_hetero=deg_hetero
+        )
 
-    def ate(self, t1=1, t0=0, w=None, noisy=True, untransform=True, transform_t=True, n_y_per_w=100,
-            causal_effect_scale=None, deg_hetero=1.0):
-        return self.ite(t1=t1, t0=t0, w=w, noisy=noisy, untransform=untransform,
-                        transform_t=transform_t, n_y_per_w=n_y_per_w,
-                        causal_effect_scale=causal_effect_scale,
-                        deg_hetero=deg_hetero).mean()
+    def ate(
+        self,
+        t1=1,
+        t0=0,
+        w=None,
+        noisy=True,
+        untransform=True,
+        transform_t=True,
+        n_y_per_w=100,
+        causal_effect_scale=None,
+        deg_hetero=1.0,
+    ):
+        return self.ite(
+            t1=t1,
+            t0=t0,
+            w=w,
+            noisy=noisy,
+            untransform=untransform,
+            transform_t=transform_t,
+            n_y_per_w=n_y_per_w,
+            causal_effect_scale=causal_effect_scale,
+            deg_hetero=deg_hetero,
+        ).mean()
 
-    def noisy_ate(self, t1=1, t0=0, w=None, n_y_per_w=100, seed=None, transform_w=False):
+    def noisy_ate(
+        self, t1=1, t0=0, w=None, n_y_per_w=100, seed=None, transform_w=False
+    ):
         if w is not None and transform_w:
             w = self.w_transform.transform(w)
 
@@ -400,8 +498,10 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
             t0 = np.full(t_shape, t0)
         total = 0
         for _ in range(n_y_per_w):
-            total += (self.sample_interventional(t=t1, w=w) -
-                      self.sample_interventional(t=t0, w=w)).mean()
+            total += (
+                self.sample_interventional(t=t1, w=w)
+                - self.sample_interventional(t=t0, w=w)
+            ).mean()
         return total / n_y_per_w
 
     def att(self, t1=1, t0=0, w=None, untransform=True, transform_t=True):
@@ -410,9 +510,22 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         # return self.ite(t1=t1, t0=t0, w=w, untransform=untransform,
         #                 transform_t=transform_t).mean()
 
-    def ite(self, t1=1, t0=0, w=None, t=None, untransform=True, transform_t=True, transform_w=True,
-            estimand="all", noisy=True, seed=None, n_y_per_w=100,
-            causal_effect_scale=None, deg_hetero=1.0):
+    def ite(
+        self,
+        t1=1,
+        t0=0,
+        w=None,
+        t=None,
+        untransform=True,
+        transform_t=True,
+        transform_w=True,
+        estimand="all",
+        noisy=True,
+        seed=None,
+        n_y_per_w=100,
+        causal_effect_scale=None,
+        deg_hetero=1.0,
+    ):
         if seed is not None:
             self.set_seed(seed)
         if w is None:
@@ -443,16 +556,30 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
             y1_total = np.zeros(w.shape[0])
             y0_total = np.zeros(w.shape[0])
             for _ in range(n_y_per_w):
-                y1_total += to_np_vector(self.sample_interventional(
-                    t=t1, w=w,causal_effect_scale=causal_effect_scale, deg_hetero=deg_hetero))
-                y0_total += to_np_vector(self.sample_interventional(
-                    t=t0, w=w, causal_effect_scale=causal_effect_scale, deg_hetero=deg_hetero))
+                y1_total += to_np_vector(
+                    self.sample_interventional(
+                        t=t1,
+                        w=w,
+                        causal_effect_scale=causal_effect_scale,
+                        deg_hetero=deg_hetero,
+                    )
+                )
+                y0_total += to_np_vector(
+                    self.sample_interventional(
+                        t=t0,
+                        w=w,
+                        causal_effect_scale=causal_effect_scale,
+                        deg_hetero=deg_hetero,
+                    )
+                )
             y_1 = y1_total / n_y_per_w
             y_0 = y0_total / n_y_per_w
         else:
             if causal_effect_scale is not None or deg_hetero != 1.0:
-                raise ValueError('Invalid causal_effect_scale or deg_hetero. '
-                                 'Current mean_y only supports defaults.')
+                raise ValueError(
+                    "Invalid causal_effect_scale or deg_hetero. "
+                    "Current mean_y only supports defaults."
+                )
             y_1 = to_np_vector(self.mean_y(t=t1, w=w))
             y_0 = to_np_vector(self.mean_y(t=t0, w=w))
         # This is already done in sample_interventional --> sample_y
@@ -462,10 +589,23 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         #     y_0 = self.y_transform.untransform(y_0)
         return y_1 - y_0
 
-    def plot_ty_dists(self, joint=True, marginal_hist=True, marginal_qq=True,
-                      dataset=TRAIN, transformed=False, verbose=True,
-                      title=True, name=None, file_ext='pdf', thin_model=None,
-                      thin_true=None, joint_kwargs={}, test=False, seed=None):
+    def plot_ty_dists(
+        self,
+        joint=True,
+        marginal_hist=True,
+        marginal_qq=True,
+        dataset=TRAIN,
+        transformed=False,
+        verbose=True,
+        title=True,
+        name=None,
+        file_ext="pdf",
+        thin_model=None,
+        thin_true=None,
+        joint_kwargs={},
+        test=False,
+        seed=None,
+    ):
         """
         Creates up to 3 different plots of the real data and the corresponding model
 
@@ -489,36 +629,70 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         if name is None:
             name = self.__class__.__name__
 
-        _, t_model, y_model = to_np_vectors(self.sample(seed=seed, untransform=(not transformed)),
-                                            thin_interval=thin_model)
-        _, t_true, y_true = self.get_data(transformed=transformed, dataset=dataset, verbose=verbose)
+        _, t_model, y_model = to_np_vectors(
+            self.sample(seed=seed, untransform=(not transformed)),
+            thin_interval=thin_model,
+        )
+        _, t_true, y_true = self.get_data(
+            transformed=transformed, dataset=dataset, verbose=verbose
+        )
         t_true, y_true = to_np_vectors((t_true, y_true), thin_interval=thin_true)
         plots = []
 
         if joint:
-            fig1 = compare_joints(t_model, y_model, t_true, y_true,
-                           xlabel1=T_MODEL_LABEL, ylabel1=Y_MODEL_LABEL,
-                           xlabel2=T_TRUE_LABEL, ylabel2=Y_TRUE_LABEL,
-                           xlabel=T, ylabel=Y,
-                           label1=MODEL_LABEL, label2=TRUE_LABEL,
-                           save_fname='{}_ty_joints.{}'.format(name, file_ext),
-                           title=title, name=name, test=test, kwargs=joint_kwargs)
-            
+            fig1 = compare_joints(
+                t_model,
+                y_model,
+                t_true,
+                y_true,
+                xlabel1=T_MODEL_LABEL,
+                ylabel1=Y_MODEL_LABEL,
+                xlabel2=T_TRUE_LABEL,
+                ylabel2=Y_TRUE_LABEL,
+                xlabel=T,
+                ylabel=Y,
+                label1=MODEL_LABEL,
+                label2=TRUE_LABEL,
+                save_fname="{}_ty_joints.{}".format(name, file_ext),
+                title=title,
+                name=name,
+                test=test,
+                kwargs=joint_kwargs,
+            )
+
             plots += [fig1]
 
         if marginal_hist or marginal_qq:
-            plots += compare_bivariate_marginals(t_true, t_model, y_true, y_model,
-                                        xlabel=T, ylabel=Y,
-                                        label1=TRUE_LABEL, label2=MODEL_LABEL,
-                                        hist=marginal_hist, qqplot=marginal_qq,
-                                        save_hist_fname='{}_ty_marginal_hists.{}'.format(name, file_ext),
-                                        save_qq_fname='{}_ty_marginal_qqplots.{}'.format(name, file_ext),
-                                        title=title, name=name, test=test)
-            
+            plots += compare_bivariate_marginals(
+                t_true,
+                t_model,
+                y_true,
+                y_model,
+                xlabel=T,
+                ylabel=Y,
+                label1=TRUE_LABEL,
+                label2=MODEL_LABEL,
+                hist=marginal_hist,
+                qqplot=marginal_qq,
+                save_hist_fname="{}_ty_marginal_hists.{}".format(name, file_ext),
+                save_qq_fname="{}_ty_marginal_qqplots.{}".format(name, file_ext),
+                title=title,
+                name=name,
+                test=test,
+            )
+
         return plots
 
-    def get_univariate_quant_metrics(self, dataset=TRAIN, transformed=False, verbose=True,
-                                     thin_model=None, thin_true=None, seed=None, n=None):
+    def get_univariate_quant_metrics(
+        self,
+        dataset=TRAIN,
+        transformed=False,
+        verbose=True,
+        thin_model=None,
+        thin_true=None,
+        seed=None,
+        n=None,
+    ):
         """
         Calculates quantitative metrics for the difference between p(t) and
         p_model(t) and the difference between p(y) and p_model(y)
@@ -538,10 +712,12 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         """
         _, t_model, y_model = to_np_vectors(
             self.sample(seed=seed, untransform=(not transformed)),
-            thin_interval=thin_model
+            thin_interval=thin_model,
         )
 
-        _, t_true, y_true = self.get_data(transformed=transformed, dataset=dataset, verbose=verbose)
+        _, t_true, y_true = self.get_data(
+            transformed=transformed, dataset=dataset, verbose=verbose
+        )
         t_true, y_true = to_np_vectors((t_true, y_true), thin_interval=thin_true)
 
         # jitter for numerical stability
@@ -573,7 +749,7 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         n_permutations=1000,
         seed=None,
         verbose=False,
-        n=None
+        n=None,
     ):
         """
         Computes Wasserstein-1 and Wasserstein-2 distances. Also computes all the
@@ -615,8 +791,13 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
             from torch_two_sample.statistics_nondiff import FRStatistic, KNNStatistic
             from torch_two_sample.statistics_diff import MMDStatistic, EnergyStatistic
         except ModuleNotFoundError as e:
-            raise ModuleNotFoundError(str(e) + ' ... Install: pip install git+git://github.com/josipd/torch-two-sample')
-        w_model, t_model, y_model = self.sample(seed=seed, untransform=(not transformed))
+            raise ModuleNotFoundError(
+                str(e)
+                + " ... Install: pip install git+git://github.com/josipd/torch-two-sample"
+            )
+        w_model, t_model, y_model = self.sample(
+            seed=seed, untransform=(not transformed)
+        )
         if n is not None and w_model.shape[0] > n:
             select_rows = np.random.choice(w_model.shape[0], n, replace=False)
             w_model = w_model[select_rows, :]
@@ -626,7 +807,9 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         t_model, y_model = to_np_vectors((t_model, y_model), column_vector=True)
         model_samples = np.hstack((t_model, y_model))
 
-        w_true, t_true, y_true = self.get_data(transformed=transformed, dataset=dataset, verbose=verbose)
+        w_true, t_true, y_true = self.get_data(
+            transformed=transformed, dataset=dataset, verbose=verbose
+        )
         if n is not None and w_true.shape[0] > n:
             select_rows = np.random.choice(w_true.shape[0], n, replace=False)
             w_true = w_true[select_rows, :]
@@ -643,7 +826,10 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
         n_model = model_samples.shape[0]
         n_true = true_samples.shape[0]
 
-        a, b = np.ones((n_model,)) / n_model, np.ones((n_true,)) / n_true  # uniform   # uniform distribution on samples
+        a, b = (
+            np.ones((n_model,)) / n_model,
+            np.ones((n_true,)) / n_true,
+        )  # uniform   # uniform distribution on samples
 
         def calculate_wasserstein1_dist(x, y):
             M_wasserstein1 = ot.dist(x, y, metric="euclidean")
@@ -655,17 +841,23 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
             wasserstein2_dist = np.sqrt(ot.emd2(a, b, M_wasserstein2))
             return wasserstein2_dist
 
-        wasserstein1_pval = permutation_test(model_samples, true_samples,
-                                             func=calculate_wasserstein1_dist,
-                                             method='approximate',
-                                             num_rounds=n_permutations,
-                                             seed=0)
+        wasserstein1_pval = permutation_test(
+            model_samples,
+            true_samples,
+            func=calculate_wasserstein1_dist,
+            method="approximate",
+            num_rounds=n_permutations,
+            seed=0,
+        )
 
-        wasserstein2_pval = permutation_test(model_samples, true_samples,
-                                             func=calculate_wasserstein2_dist,
-                                             method='approximate',
-                                             num_rounds=n_permutations,
-                                             seed=0)
+        wasserstein2_pval = permutation_test(
+            model_samples,
+            true_samples,
+            func=calculate_wasserstein2_dist,
+            method="approximate",
+            num_rounds=n_permutations,
+            seed=0,
+        )
 
         results = {
             "wasserstein1 pval": wasserstein1_pval,
@@ -685,8 +877,10 @@ class BaseGenModel(object, metaclass=BaseGenModelMeta):
 
         if alphas is not None:
             mmd = MMDStatistic(n_model, n_true)
-            matrix = mmd(model_samples_var, true_samples_var, alphas=None, ret_matrix=True)[1]
-            results['MMD pval'] = mmd.pval(matrix, n_permutations=n_permutations)
+            matrix = mmd(
+                model_samples_var, true_samples_var, alphas=None, ret_matrix=True
+            )[1]
+            results["MMD pval"] = mmd.pval(matrix, n_permutations=n_permutations)
 
         energy = EnergyStatistic(n_model, n_true)
         matrix = energy(model_samples_var, true_samples_var, ret_matrix=True)[1]

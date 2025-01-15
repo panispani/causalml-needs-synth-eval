@@ -12,25 +12,29 @@ from consts import REALCAUSE_DATASETS_FOLDER, N_SAMPLE_SEEDS
 
 
 def load_realcause_dataset(dataset, sample=0):
-    valid_datasets = {'lalonde_cps', 'lalonde_psid', 'twins'}
+    valid_datasets = {"lalonde_cps", "lalonde_psid", "twins"}
     dataset = dataset.lower()
     if dataset not in valid_datasets:
-        raise ValueError('Invalid dataset "{}" ... Valid datasets: {}'
-                         .format(dataset, valid_datasets))
+        raise ValueError(
+            'Invalid dataset "{}" ... Valid datasets: {}'.format(
+                dataset, valid_datasets
+            )
+        )
     if not isinstance(sample, int):
-        raise ValueError('sample must be an integer')
+        raise ValueError("sample must be an integer")
     if 0 < sample >= N_SAMPLE_SEEDS:
-        raise ValueError('sample must be between 0 and {}'
-                         .format(N_SAMPLE_SEEDS - 1))
+        raise ValueError("sample must be between 0 and {}".format(N_SAMPLE_SEEDS - 1))
 
-    dataset_file = Path(REALCAUSE_DATASETS_FOLDER) / '{}_sample{}.csv'.format(dataset, sample)
+    dataset_file = Path(REALCAUSE_DATASETS_FOLDER) / "{}_sample{}.csv".format(
+        dataset, sample
+    )
     return pd.read_csv(dataset_file)
 
 
-def load_gen(saveroot='save', dataroot=None):
+def load_gen(saveroot="save", dataroot=None):
     args = get_args().parse_args([])
-    args_path = os.path.join(saveroot, 'args.txt')
-    args.__dict__.update(json.load(open(args_path, 'r')))
+    args_path = os.path.join(saveroot, "args.txt")
+    args.__dict__.update(json.load(open(args_path, "r")))
     print(args)
 
     # overwriting args
