@@ -8,11 +8,21 @@ from data.lalonde import load_lalonde
 from data.lbidd import load_lbidd
 from data.ihdp import load_ihdp
 from data.twins import load_twins
-from models import TarNet, preprocess, TrainingParams, MLPParams, LinearModel, GPModel, TarGPModel, GPParams
+from models import (
+    TarNet,
+    preprocess,
+    TrainingParams,
+    MLPParams,
+    LinearModel,
+    GPModel,
+    TarGPModel,
+    GPParams,
+)
 from models import distributions
 import helpers
 from collections import OrderedDict
 import json
+
 # from utils import get_duplicates
 
 
@@ -20,7 +30,11 @@ def get_data(args):
     data_name = args.data.lower()
     ate = None
     ites = None
-    if data_name == "lalonde" or data_name == "lalonde_psid" or data_name == "lalonde_psid1":
+    if (
+        data_name == "lalonde"
+        or data_name == "lalonde_psid"
+        or data_name == "lalonde_psid1"
+    ):
         w, t, y = load_lalonde(obs_version="psid", dataroot=args.dataroot)
     elif data_name == "lalonde_rct":
         w, t, y = load_lalonde(rct=True, dataroot=args.dataroot)
@@ -33,18 +47,30 @@ def get_data(args):
         options = data_name.split("_")
         link = options[1]
         n = options[2]
-        observe_counterfactuals = (len(options) == 4) and (options[3] == "counterfactual")
-        d = load_lbidd(n=n, observe_counterfactuals=observe_counterfactuals, link=link,
-                       dataroot=args.dataroot, return_ate=True, return_ites=True)
+        observe_counterfactuals = (len(options) == 4) and (
+            options[3] == "counterfactual"
+        )
+        d = load_lbidd(
+            n=n,
+            observe_counterfactuals=observe_counterfactuals,
+            link=link,
+            dataroot=args.dataroot,
+            return_ate=True,
+            return_ites=True,
+        )
         ate = d["ate"]
-        ites = d['ites']
+        ites = d["ites"]
         if observe_counterfactuals:
-            w, t, y = d["obs_counterfactual_w"], d["obs_counterfactual_t"], d["obs_counterfactual_y"]
+            w, t, y = (
+                d["obs_counterfactual_w"],
+                d["obs_counterfactual_t"],
+                d["obs_counterfactual_y"],
+            )
         else:
             w, t, y = d["w"], d["t"], d["y"]
     elif data_name == "ihdp":
         d = load_ihdp(return_ate=True, return_ites=True)
-        w, t, y, ate, ites = d["w"], d["t"], d["y"], d['ate'], d['ites']
+        w, t, y, ate, ites = d["w"], d["t"], d["y"], d["ate"], d["ites"]
     elif data_name == "ihdp_counterfactual":
         d = load_ihdp(observe_counterfactuals=True)
         w, t, y = d["w"], d["t"], d["y"]
@@ -157,10 +183,10 @@ def main(args, save_args=True, log_=True):
 
     # model type
     additional_args = dict()
-    if args.model_type == 'tarnet':
+    if args.model_type == "tarnet":
         Model = TarNet
 
-        logger.info('model type: tarnet')
+        logger.info("model type: tarnet")
         mlp_params = MLPParams(
             n_hidden_layers=args.n_hidden_layers,
             dim_h=args.dim_h,
@@ -173,19 +199,19 @@ def main(args, save_args=True, log_=True):
             mlp_params_y0_w=mlp_params,
             mlp_params_y1_w=mlp_params,
         )
-    elif args.model_type == 'linear':
+    elif args.model_type == "linear":
         Model = LinearModel
 
-        logger.info('model type: linear model')
+        logger.info("model type: linear model")
         network_params = dict()
-    elif 'gp' in args.model_type:
-        if args.model_type == 'gp':
+    elif "gp" in args.model_type:
+        if args.model_type == "gp":
             Model = GPModel
-        elif args.model_type == 'targp':
+        elif args.model_type == "targp":
             Model = TarGPModel
         else:
-            raise Exception(f'model type {args.model_type} not implemented')
-        logger.info('model type: linear model')
+            raise Exception(f"model type {args.model_type} not implemented")
+        logger.info("model type: linear model")
 
         kernel_t = gpytorch.kernels.__dict__[args.kernel_t]()
         kernel_y = gpytorch.kernels.__dict__[args.kernel_y]()
@@ -194,33 +220,43 @@ def main(args, save_args=True, log_=True):
             gp_t_w=GPParams(kernel=kernel_t, var_dist=var_dist),
             gp_y_tw=GPParams(kernel=kernel_y, var_dist=None),
         )
-        logger.info(f'gp_t_w: {repr(network_params["gp_t_w"])}'
-                    f'gp_y_tw: {repr(network_params["gp_y_tw"])}')
-        additional_args['num_tasks'] = args.num_tasks
+        logger.info(
+            f'gp_t_w: {repr(network_params["gp_t_w"])}'
+            f'gp_y_tw: {repr(network_params["gp_y_tw"])}'
+        )
+        additional_args["num_tasks"] = args.num_tasks
     else:
-        raise Exception(f'model type {args.model_type} not implemented')
+        raise Exception(f"model type {args.model_type} not implemented")
 
     if args.n_hidden_layers < 0:
-        raise Exception(f'`n_hidden_layers` must be nonnegative, got {args.n_hidden_layers}')
+        raise Exception(
+            f"`n_hidden_layers` must be nonnegative, got {args.n_hidden_layers}"
+        )
 
-    model = Model(w, t, y,
-                  training_params=training_params,
-                  network_params=network_params,
-                  binary_treatment=True, outcome_distribution=distribution,
-                  outcome_min=outcome_min,
-                  outcome_max=outcome_max,
-                  train_prop=args.train_prop,
-                  val_prop=args.val_prop,
-                  test_prop=args.test_prop,
-                  seed=args.seed,
-                  early_stop=args.early_stop,
-                  patience=args.patience,
-                  ignore_w=args.ignore_w,
-                  grad_norm=args.grad_norm,
-                  w_transform=w_transform, y_transform=y_transform,  # TODO set more args
-                  savepath=os.path.join(args.saveroot, 'model.pt'),
-                  test_size=args.test_size,
-                  additional_args=additional_args)
+    model = Model(
+        w,
+        t,
+        y,
+        training_params=training_params,
+        network_params=network_params,
+        binary_treatment=True,
+        outcome_distribution=distribution,
+        outcome_min=outcome_min,
+        outcome_max=outcome_max,
+        train_prop=args.train_prop,
+        val_prop=args.val_prop,
+        test_prop=args.test_prop,
+        seed=args.seed,
+        early_stop=args.early_stop,
+        patience=args.patience,
+        ignore_w=args.ignore_w,
+        grad_norm=args.grad_norm,
+        w_transform=w_transform,
+        y_transform=y_transform,  # TODO set more args
+        savepath=os.path.join(args.saveroot, "model.pt"),
+        test_size=args.test_size,
+        additional_args=additional_args,
+    )
 
     # TODO GPU support
     if args.train:
@@ -251,16 +287,28 @@ def get_args():
     parser.add_argument("--saveroot", type=str, default="save")
     parser.add_argument("--train", type=eval, default=True, choices=[True, False])
     parser.add_argument("--eval", type=eval, default=True, choices=[True, False])
-    parser.add_argument('--overwrite_reload', type=str, default='',
-                        help='secondary folder name of an experiment')  # TODO: for model loading
+    parser.add_argument(
+        "--overwrite_reload",
+        type=str,
+        default="",
+        help="secondary folder name of an experiment",
+    )  # TODO: for model loading
 
     # model type
-    parser.add_argument('--model_type', type=str, default='tarnet',
-                        choices=['tarnet', 'linear', 'gp', 'targp'])  # TODO: renaming tarnet to be dragonnet
+    parser.add_argument(
+        "--model_type",
+        type=str,
+        default="tarnet",
+        choices=["tarnet", "linear", "gp", "targp"],
+    )  # TODO: renaming tarnet to be dragonnet
 
     # distribution of outcome (y)
-    parser.add_argument('--dist', type=str, default='FactorialGaussian',
-                        choices=distributions.BaseDistribution.dist_names)
+    parser.add_argument(
+        "--dist",
+        type=str,
+        default="FactorialGaussian",
+        choices=distributions.BaseDistribution.dist_names,
+    )
     parser.add_argument("--dist_args", type=str, default=list(), nargs="+")
     parser.add_argument("--atoms", type=float, default=list(), nargs="+")
 
@@ -270,14 +318,26 @@ def get_args():
     parser.add_argument("--activation", type=str, default="ReLU")
 
     # architecture for gp
-    parser.add_argument("--kernel_t", type=str, default="RBFKernel",
-                        choices=gpytorch.kernels.__all__)
-    parser.add_argument("--kernel_y", type=str, default="RBFKernel",
-                        choices=gpytorch.kernels.__all__)
-    parser.add_argument("--var_dist", type=str, default="MeanFieldVariationalDistribution",
-                        choices=[vd for vd in gpytorch.variational.__all__ if 'VariationalDistribution' in vd])
-    parser.add_argument("--num_tasks", type=int, default=32,
-                        help='number of latent variables for the GP atom softmax classifier')
+    parser.add_argument(
+        "--kernel_t", type=str, default="RBFKernel", choices=gpytorch.kernels.__all__
+    )
+    parser.add_argument(
+        "--kernel_y", type=str, default="RBFKernel", choices=gpytorch.kernels.__all__
+    )
+    parser.add_argument(
+        "--var_dist",
+        type=str,
+        default="MeanFieldVariationalDistribution",
+        choices=[
+            vd for vd in gpytorch.variational.__all__ if "VariationalDistribution" in vd
+        ],
+    )
+    parser.add_argument(
+        "--num_tasks",
+        type=int,
+        default=32,
+        help="number of latent variables for the GP atom softmax classifier",
+    )
 
     # training params
     parser.add_argument("--lr", type=float, default=0.001)
@@ -290,10 +350,18 @@ def get_args():
     parser.add_argument("--grad_norm", type=float, default=float("inf"))
     parser.add_argument("--test_size", type=int)
 
-    parser.add_argument('--w_transform', type=str, default='Standardize',
-                        choices=preprocess.Preprocess.prep_names)
-    parser.add_argument('--y_transform', type=str, default='Normalize',
-                        choices=preprocess.Preprocess.prep_names)
+    parser.add_argument(
+        "--w_transform",
+        type=str,
+        default="Standardize",
+        choices=preprocess.Preprocess.prep_names,
+    )
+    parser.add_argument(
+        "--y_transform",
+        type=str,
+        default="Normalize",
+        choices=preprocess.Preprocess.prep_names,
+    )
     parser.add_argument("--train_prop", type=float, default=0.5)
     parser.add_argument("--val_prop", type=float, default=0.1)
     parser.add_argument("--test_prop", type=float, default=0.4)
