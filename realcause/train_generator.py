@@ -69,10 +69,10 @@ def get_data(args):
         else:
             w, t, y = d["w"], d["t"], d["y"]
     elif data_name == "ihdp":
-        d = load_ihdp(return_ate=True, return_ites=True)
+        d = load_ihdp(return_ate=True, return_ites=True, i=args.realization_idx)
         w, t, y, ate, ites = d["w"], d["t"], d["y"], d["ate"], d["ites"]
     elif data_name == "ihdp_counterfactual":
-        d = load_ihdp(observe_counterfactuals=True)
+        d = load_ihdp(observe_counterfactuals=True, i=args.realization_idx)
         w, t, y = d["w"], d["t"], d["y"]
     elif data_name == "twins":
         d = load_twins(dataroot=args.dataroot)
@@ -367,6 +367,7 @@ def get_args():
     parser.add_argument("--val_prop", type=float, default=0.1)
     parser.add_argument("--test_prop", type=float, default=0.4)
     parser.add_argument("--seed", type=int, default=123)
+    parser.add_argument("--realization_idx", type=int, default=0)
     parser.add_argument("--comet", type=eval, default=False, choices=[True, False])
 
     # evaluation
