@@ -134,8 +134,58 @@ def evaluate(args, model):
     summary.update(q50_t_pval=np.percentile(t_pvals, 50))
     summary.update(q50_y_pval=np.percentile(y_pvals, 50))
 
+    estimated_ites = model.ite()
+
     summary.update(ate_exact=model.ate().item())
     summary.update(ate_noisy=model.noisy_ate().item())
+
+    return summary, all_runs
+
+
+def evaluate2(args, model, ites_true, ate_true):
+
+    all_runs = list()
+    t_pvals = list()
+    y_pvals = list()
+
+    for _ in range(args.num_univariate_tests):
+        uni_metrics = model.get_univariate_quant_metrics(dataset="test")
+        all_runs.append(uni_metrics)
+        t_pvals.append(uni_metrics["t_ks_pval"])
+        y_pvals.append(uni_metrics["y_ks_pval"])
+
+    summary = OrderedDict()
+
+    summary.update(nll=model.best_val_loss)
+    summary.update(avg_t_pval=sum(t_pvals) / args.num_univariate_tests)
+    summary.update(avg_y_pval=sum(y_pvals) / args.num_univariate_tests)
+    summary.update(min_t_pval=min(t_pvals))
+    summary.update(min_y_pval=min(y_pvals))
+    summary.update(q30_t_pval=np.percentile(t_pvals, 30))
+    summary.update(q30_y_pval=np.percentile(y_pvals, 30))
+    summary.update(q50_t_pval=np.percentile(t_pvals, 50))
+    summary.update(q50_y_pval=np.percentile(y_pvals, 50))
+
+    estimated_ite_noisy = model.ite(w=model.w_test_transformed, noisy=True)
+    estimated_ite_not_noisy = model.ite(w=model.w_test_transformed, noisy=False)
+    estimated_ate_noisy = model.ate(w=model.w_test_transformed, noisy=True)
+    estimated_ate_not_noisy = model.ate(w=model.w_test_transformed, noisy=False)
+
+    ites_true_test = ites_true[model.test_idxs]
+    ates_true_test = ate_true  # it's a scalar, nothing to index
+
+    # Compute ATE abs bias
+    ate_bias_noisy = abs(ates_true_test - estimated_ate_noisy)
+    ate_bias_not_noisy = abs(ates_true_test - estimated_ate_not_noisy)
+
+    # Compute PEHE
+    pehe_noisy = np.sqrt(np.mean((ites_true_test - estimated_ite_noisy) ** 2))
+    pehe_not_noisy = np.sqrt(np.mean((ites_true_test - estimated_ite_not_noisy) ** 2))
+
+    summary.update(ate_bias_noisy=ate_bias_noisy)
+    summary.update(ate_bias_not_noisy=ate_bias_not_noisy)
+    summary.update(pehe_noisy=pehe_noisy)
+    summary.update(pehe_not_noisy=pehe_not_noisy)
 
     return summary, all_runs
 
@@ -264,7 +314,7 @@ def main(args, save_args=True, log_=True):
 
     # evaluation
     if args.eval:
-        summary, all_runs = evaluate(args, model)
+        summary, all_runs = evaluate2(args, model, ites, ate)
         logger.info(summary)
         with open(os.path.join(args.saveroot, "summary.txt"), "w") as file:
             file.write(json.dumps(summary, indent=4))
