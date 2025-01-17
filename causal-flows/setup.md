@@ -116,12 +116,12 @@ git diff --name-only ebc5fac..HEAD -- .
 
 ### Files edited by us
 
-- display_comparison_table.ipynb
+- display_comparison_table.ipynb [new]
 - generate_jobs.py
-- results/dataframes/
-- intervention_and_counterfactual_logs.txt
-- grids/causal_nf/robustness
-- grids/causal_nf/robustness2
-- grids/causal_nf/robust_sinusoid
-- grids/causal_nf/experim
+- results/dataframes/ [new]
+- intervention_and_counterfactual_logs.txt [new]
+- grids/causal_nf/robustness [new]
+- grids/causal_nf/robustness2 [new]
+- grids/causal_nf/robust_sinusoid [new]
+- grids/causal_nf/experim [new]
 - triangle.py
