@@ -92,5 +92,36 @@ The steps are then the same as before. 1) Generate the jobs 2) bash execute them
 
 ```bash
 # Load a model and test only
-python main.py --config_file grids/causal_nf/robustness/base/configs/1/config_1.yaml --wandb_mode offline --wandb_group robustness --project Test --load_model /home/pani/causality-benchmarking/causal-flows/output_causal_nf/robustness/l6b0en36/
+python main.py --config_file grids/causal_nf/robustness/base/configs/1/config_1.yaml --wandb_mode offline --wandb_group robustness --project Test --load_model ./output_causal_nf/robustness/l6b0en36/
+# Example run command
+python main.py --config_file grids/causal_nf/experim/base/configs/1/config_1.yaml --wandb_mode offline --wandb_group experim --project Test
+# See edited files
+git diff --name-only ebc5fac..HEAD -- .
 ```
+
+### Important files
+
+- main.py
+- sem_equations/triangle.py - where SCM are defined
+- grids/causal_nf/comparison_x_u/base/configs/1/config_1.yaml - experiment defined
+- grids/causal_nf/comparison_x_u/base/scripts/batch_0.py - exact commands to run causalNF with a specific config
+- causal_nf/modules/causal_nf.py [core]
+- causal_nf/models/causal_nf.py [core]
+- causal_nf/preparators/scm/scm_preparator.py [core]
+- causal_nf/transforms/causal_transform.py [core]
+- causal_nf/distributions/scm.py [core]
+- intervention_and_counterfactual_logs.txt - to understand the kinds of queries
+- scripts/create_comparison_flows.py - After you run training to create the result dataframe
+- display_comparison_table.ipynb - results are displayed
+
+### Files edited by us
+
+- display_comparison_table.ipynb
+- generate_jobs.py
+- results/dataframes/
+- intervention_and_counterfactual_logs.txt
+- grids/causal_nf/robustness
+- grids/causal_nf/robustness2
+- grids/causal_nf/robust_sinusoid
+- grids/causal_nf/experim
+- triangle.py
