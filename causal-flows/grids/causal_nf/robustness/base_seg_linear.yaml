@@ -1,0 +1,10 @@
+dataset:
+  name: [triangle]
+  sem_name:
+    [
+      seg-linear-0.2,
+      seg-linear-0.4,
+      seg-linear-0.6,
+      seg-linear-0.8,
+      seg-linear-1.0,
+    ]
