@@ -1,0 +1,3 @@
+dataset:
+  name: [triangle]
+  sem_name: ["ctf1", "ctf2", "ctf3", "ctf4", "ctf5", "ctf6"]
