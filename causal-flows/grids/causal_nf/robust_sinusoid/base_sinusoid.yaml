@@ -1,0 +1,17 @@
+dataset:
+  name: [triangle]
+  sem_name:
+    [
+      sinusoid-0.25,
+      sinusoid-0.30,
+      sinusoid-0.35,
+      sinusoid-0.40,
+      sinusoid-0.45,
+      sinusoid-0.5,
+      sinusoid-1.0,
+      sinusoid-2.0,
+      sinusoid-4.0,
+      sinusoid-6.0,
+      sinusoid-8.0,
+      sinusoid-10.0,
+    ]
