@@ -106,7 +106,8 @@ python train_generator.py --data "ihdp" \
 #   - Compute ATE bias and PEHE at the end
 #   - Show global and per-seed mean and std of PEHE and ATE bias
 # Note: this tests both different model initializations and different data: Within the same seed you have different data but the same model initialization. Across seeds you can have the same data but different model initializations but also different data and different model initializations. This is why it's valuable to both use different realizations and different seeds.
-python realism_experiment.py --seeds 1 42 --out_dir ihdp_experiments
+python realism_experiment_per_seed.py --seeds 1 42 --out_dir ihdp_experiments
+python realism_experiment_per_realization.py --seeds 1 42 --out_dir ihdp_experiments
 # For non-id experiment:
 # For each seed run realcause and get a PEHE and ATE bias. Then aggregate over all seeds into a mean and std. Save all results and models in the --out_dir
 python non_id_experiment.py --seeds 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 --out_dir non_id_experiments_3

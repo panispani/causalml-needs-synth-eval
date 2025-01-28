@@ -8,6 +8,7 @@ from data.lalonde import load_lalonde
 from data.lbidd import load_lbidd
 from data.ihdp import load_ihdp
 from data.twins import load_twins
+from data.non_id import load_non_id_synthetic
 from models import (
     TarNet,
     preprocess,
@@ -77,6 +78,16 @@ def get_data(args):
     elif data_name == "twins":
         d = load_twins(dataroot=args.dataroot)
         w, t, y = d["w"], d["t"], d["y"]
+    elif data_name == "non_id":
+        d = load_non_id_synthetic(return_ate=True, return_ites=True)
+        w, t, y, ate, ites = d["w"], d["t"], d["y"], d["ate"], d["ites"]
+    elif data_name == "non_id_big":
+        d = load_non_id_synthetic(
+            return_ate=True,
+            return_ites=True,
+            file_path="datasets/non_id_synthetic_data_big_confounding.npz",
+        )
+        w, t, y, ate, ites = d["w"], d["t"], d["y"], d["ate"], d["ites"]
     else:
         raise (Exception("dataset {} not implemented".format(args.data)))
 
