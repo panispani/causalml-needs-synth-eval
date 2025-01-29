@@ -1,0 +1,118 @@
+{
+    "seed_stats": {
+        "1": {
+            "ate_bias_noisy_mean": 0.8858218055586131,
+            "ate_bias_noisy_std": 1.0393991211243045,
+            "ate_bias_not_noisy_mean": 4.272990013123391,
+            "ate_bias_not_noisy_std": 1.6921081620019667,
+            "pehe_noisy_mean": 2.7000146645098293,
+            "pehe_noisy_std": 2.4826410830193275,
+            "pehe_not_noisy_mean": 7.619069042063099,
+            "pehe_not_noisy_std": 7.830735725513519
+        },
+        "2": {
+            "ate_bias_noisy_mean": 0.797244266701669,
+            "ate_bias_noisy_std": 1.4280053662730532,
+            "ate_bias_not_noisy_mean": 4.292462571095577,
+            "ate_bias_not_noisy_std": 1.68812482867059,
+            "pehe_noisy_mean": 2.7360993924493213,
+            "pehe_noisy_std": 3.0998221898815324,
+            "pehe_not_noisy_mean": 7.631221171672817,
+            "pehe_not_noisy_std": 7.846059931887121
+        },
+        "3": {
+            "ate_bias_noisy_mean": 0.7527033413165776,
+            "ate_bias_noisy_std": 0.8569136421814695,
+            "ate_bias_not_noisy_mean": 4.2840912899071295,
+            "ate_bias_not_noisy_std": 1.6904467402194128,
+            "pehe_noisy_mean": 2.826526850314029,
+            "pehe_noisy_std": 2.859829208792227,
+            "pehe_not_noisy_mean": 7.5950401496304805,
+            "pehe_not_noisy_std": 7.761256893346098
+        },
+        "4": {
+            "ate_bias_noisy_mean": 1.0511146527493622,
+            "ate_bias_noisy_std": 1.6566080772261238,
+            "ate_bias_not_noisy_mean": 4.2695735668483135,
+            "ate_bias_not_noisy_std": 1.6936107328920327,
+            "pehe_noisy_mean": 2.809014865481941,
+            "pehe_noisy_std": 2.7001662157390696,
+            "pehe_not_noisy_mean": 7.5744180663293115,
+            "pehe_not_noisy_std": 7.645611613545992
+        },
+        "5": {
+            "ate_bias_noisy_mean": 0.885255346536283,
+            "ate_bias_noisy_std": 1.233575010876108,
+            "ate_bias_not_noisy_mean": 4.272659591960156,
+            "ate_bias_not_noisy_std": 1.6885423942324227,
+            "pehe_noisy_mean": 2.7801656491024453,
+            "pehe_noisy_std": 2.960860782568801,
+            "pehe_not_noisy_mean": 7.651351006999918,
+            "pehe_not_noisy_std": 7.974382019170592
+        },
+        "6": {
+            "ate_bias_noisy_mean": 0.8406985607233645,
+            "ate_bias_noisy_std": 1.0600970585267997,
+            "ate_bias_not_noisy_mean": 4.277329155001691,
+            "ate_bias_not_noisy_std": 1.6905702209434084,
+            "pehe_noisy_mean": 2.6233444379498123,
+            "pehe_noisy_std": 2.8360359789637077,
+            "pehe_not_noisy_mean": 7.610321250863177,
+            "pehe_not_noisy_std": 7.766664522583354
+        },
+        "7": {
+            "ate_bias_noisy_mean": 0.9366406975088799,
+            "ate_bias_noisy_std": 1.5983891887338224,
+            "ate_bias_not_noisy_mean": 4.283557538418001,
+            "ate_bias_not_noisy_std": 1.6854193610581336,
+            "pehe_noisy_mean": 2.7249589402541368,
+            "pehe_noisy_std": 2.949056120014054,
+            "pehe_not_noisy_mean": 7.593573478696814,
+            "pehe_not_noisy_std": 7.6868254734629975
+        },
+        "8": {
+            "ate_bias_noisy_mean": 0.8067781025178907,
+            "ate_bias_noisy_std": 1.1156891747715807,
+            "ate_bias_not_noisy_mean": 4.278970446775103,
+            "ate_bias_not_noisy_std": 1.6872015315825943,
+            "pehe_noisy_mean": 2.663223207367601,
+            "pehe_noisy_std": 2.654926557241361,
+            "pehe_not_noisy_mean": 7.657535825974448,
+            "pehe_not_noisy_std": 7.808783837393774
+        },
+        "9": {
+            "ate_bias_noisy_mean": 0.8285358939364318,
+            "ate_bias_noisy_std": 1.581664196507701,
+            "ate_bias_not_noisy_mean": 4.288971448098211,
+            "ate_bias_not_noisy_std": 1.6899184007652195,
+            "pehe_noisy_mean": 2.6851663316071255,
+            "pehe_noisy_std": 3.0535028185106428,
+            "pehe_not_noisy_mean": 7.601570038160313,
+            "pehe_not_noisy_std": 7.7338115876847855
+        },
+        "10": {
+            "ate_bias_noisy_mean": 0.7619713540131507,
+            "ate_bias_noisy_std": 1.2488628182824508,
+            "ate_bias_not_noisy_mean": 4.297624954670802,
+            "ate_bias_not_noisy_std": 1.6900757196612881,
+            "pehe_noisy_mean": 2.5564860995382164,
+            "pehe_noisy_std": 2.584262994895171,
+            "pehe_not_noisy_mean": 7.647549329477442,
+            "pehe_not_noisy_std": 7.681147574570483
+        }
+    },
+    "overall_stats": {
+        "ate_bias_noisy_mean": 0.8546764021562221,
+        "ate_bias_noisy_std": 1.3106227500356233,
+        "ate_bias_not_noisy_mean": 4.281823057589838,
+        "ate_bias_not_noisy_std": 1.6896258802116098,
+        "pehe_noisy_mean": 2.710500043857446,
+        "pehe_noisy_std": 2.8260002073506127,
+        "pehe_not_noisy_mean": 7.6181649359867825,
+        "pehe_not_noisy_std": 7.77411568785674
+    }
+    # put into perspective with how big the ATE is over these realizations
+    # mean ATE (4.515840666133865, 1.6713030190834204)
+    # mean error 0.085, within 1std deviation 2.16529915 (2.17) which is almost half the ATE
+    # to put more perspective on this, non identifiable case.
+}
