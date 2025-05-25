@@ -90,7 +90,7 @@ Create your own directory in place of `causal-flows/grids/causal_nf/comparison_x
 
 The steps are then the same as before. 1) Generate the jobs 2) bash execute them 3) create comparison flows 4) Print the table
 
-6. Reproducing Experiment 1
+6. Reproducing Experiment 2
 
 ```bash
 # When assumption violations don't affect performance
@@ -105,6 +105,7 @@ python generate_jobs.py --grid_file grids/causal_nf/robustness/base.yaml --forma
 nohup bash grids/causal_nf/robustness/base/jobs_sh/jobs_1.sh > output_causal_nf_robustness_jobs.log 2>&1 &\
 ## This is part of RealCause. You need to manually edit the "exp_folders" variable in this python file to combine the dataframes/directories that you want (e.g. robust_sinusoid). By default this is "robust_sinusoid".
 python scripts/create_comparison_flows.py
+## to display the pickle file, see display_comparison_table.ipynb
 
 # When assumption violations deteriorate performance
 
@@ -114,6 +115,7 @@ python generate_jobs.py --grid_file grids/causal_nf/robustness2/base.yaml --form
 nohup bash grids/causal_nf/robustness2/base/jobs_sh/jobs_1.sh > output_causal_nf_robustness2_jobs.log 2>&1 &
 ## This is part of RealCause. You need to manually edit the "exp_folders" variable in this python file to combine the dataframes/directories that you want (e.g. robustness2 in this case). By default this is "robust_sinusoid" (previous experiment).
 python scripts/create_comparison_flows.py
+## to display the pickle file, see display_comparison_table.ipynb
 ```
 
 ## Misc
