@@ -361,9 +361,14 @@ class Triangle(SEM):
                     # for i in range(y.shape[0]):
                     #     if y[i] > 1 or y[i] < -1:
                     #         print(y[i])
-                    raise ValueError(
-                        "Input out of domain [-1, 1]. Cannot invert sin()."
-                    )
+                    # raise ValueError(
+                    #     "Input out of domain [-1, 1]. Cannot invert sin()."
+                    # )
+                    # Clamp the values to [-1, 1]
+                    # y = torch.clamp(y, -1.0, 1.0)
+                    # Set values outside [-1, 1] to NaN
+                    y = torch.where((y >= -1.0) & (y <= 1.0), y, float('nan'))
+
 
                 # 2) Compute alpha = arcsin(y).
                 #    This is a tensor, same shape as y, with requires_grad=True if y does.
