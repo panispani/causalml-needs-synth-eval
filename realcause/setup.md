@@ -13,11 +13,11 @@ pip install POT
 pip install git+git://github.com/josipd/torch-two-sample
 ```
 
-Setup was relatively easy, but there are no specific instructions about reproducing Table 3.
+Setup is relatively easy, but there are no specific instructions in the repo about reproducing Table 3 of the original paper.
 
 2. Train a generative model for IHDP
 
-There doesn't seem to be a direct way to load the model. This can be easily implemented by I get different results from the NN in `nonlinear.py::_sample_y::280` before and after I load the model (even if I reset the random seed). Therefore, in an attempt to avoid debugging the saving and loading procedure, we do **all evaluation** in the train script, while the model is still in RAM. Also don't use `early_stop`, it doesn't mean what you think it means.
+There doesn't seem to be a direct way to load trained models. Using existing code gives different results when reloading the model. Therefore, in an attempt to avoid debugging the saving and loading procedure, we do **all evaluation** in the train script, while the model is still in RAM. Also don't use `early_stop`, it doesn't mean what you think it means.
 
 ```bash
 # Saves "model.pt", "args.txt" and "log.txt" in --saveroot
@@ -41,9 +41,13 @@ python train_generator.py --data "ihdp" \
 
 3. Evaluation
 
-I've created a function `evaluate2` in train_generator. Call the normal `evaluate` function in `main` if you prefer. The new evaluate function computes what we care about in your experiments, the ATE bias and PEHE per realization (the noisy version). Both of these (`ate_bias_noisy` and `pehe_noisy`) are going to be in `summary.txt`. Evaluation is done with the test dataset (which I'm not sure this what what was done before). The results I get seem close enough with Table 3, except PEHE. I can't get a PEHE that bad, not sure what's wrong. I also noticed that in some file they use median instead of mean for PEHE - can't reproduce the huge PEHE for IHDP as in the paper.
+We use a new evaluation function, `evaluate2`, defined in `train_generator.py`. If you'd rather stick to the original setup, you can call the standard `evaluate` function. After running an experiment, all the metrics will be in `summary.txt`, specifically take a look at `ate_bias_noisy` and `pehe_noisy`.
 
-Previous key metrics of summary.txt:
+Evaluation is done on the **test dataset** (note: it's unclear whether this was also the case in the original paper). Our reproduced results match Table 3 fairly well, **except for PEHE**. We were unable to replicate the very high PEHE values reported for IHDP - our numbers are consistently lower. In some parts of the original codebase, they appear to use the **median** rather than the **mean** when computing PEHE, but even accounting for this, we couldn't reproduce the large PEHE values (we don't use PEHE in the experiments of our paper).
+
+When trying to reproduce the results you should probably **use the automation scripts** `realism_experiment.py` and `non_id_experiment.py` rather than manually running `train_generator.py`. We include instructions on them in the Misc section below.
+
+Key metrics of summary.txt when using the original `evaluate` function:
 
 - ate_exact: True ATE computed from the generative model.
 - ate_noisy: ATE computed with noisy outcomes.
@@ -75,7 +79,29 @@ Example summary.txt:
 }
 ```
 
-When trying to reproduce the results you should probably use the automation scripts `realism_experiment.py` and `non_id_experiment.py` rather than manually running `train_generator.py`. I include instructions on them in the next section (Misc).
+## Reproducing Experiment 1
+
+Each of these creates a summary.txt in the `out_dir` that summarizes the results.
+
+```bash
+# 1 realization, 20 seeds
+# Results for this setup are already available in `one_realization_many_seeds` for 20 seeds (realization 0 used in the original experiments of realcause) and `beston84` for 20 seeds (realization 84)
+# To select only one realization you need to edit the line
+#            for run_index in range(1, 100):
+# to ONLY include the realization you care about, otherwise this will run over all realizations too
+python realism_experiment_per_seed.py --seeds 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 --out_dir one_realization_many_seeds
+
+# 100 realizations, 1 seed
+# Results for this setup are already available in `seed123realizations100`
+python realism_experiment_per_realization.py --seeds 123 --out_dir seed123realizations100
+
+# 100 realizations, 20 seeds
+# Results for this setup are already available in `my_experiments_3_per_realization`
+nohup python realism_experiment_per_realization.py --seeds 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 --out_dir 100_realizations_20_seeds > output_100_realizations_20_seeds.log 2>&1 &\
+
+# For the experiment in the appendix where we filter by realism before evaluation (you need to run `100 realizations, 20 seeds` first, however you can just run it because we include the results of that in the repo)
+python equivalencerealism.py
+```
 
 ## Misc
 
@@ -108,7 +134,7 @@ python train_generator.py --data "ihdp" \
 # Note: this tests both different model initializations and different data: Within the same seed you have different data but the same model initialization. Across seeds you can have the same data but different model initializations but also different data and different model initializations. This is why it's valuable to both use different realizations and different seeds.
 python realism_experiment_per_seed.py --seeds 1 42 --out_dir ihdp_experiments
 python realism_experiment_per_realization.py --seeds 1 42 --out_dir ihdp_experiments
-# For non-id experiment:
+# For non-id experiment (bonus):
 # For each seed run realcause and get a PEHE and ATE bias. Then aggregate over all seeds into a mean and std. Save all results and models in the --out_dir
 python non_id_experiment.py --seeds 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 --out_dir non_id_experiments_3
 
@@ -135,9 +161,10 @@ git diff 82ccf1d..HEAD -- data/ihdp.py
 ### Files edited by us
 
 - train_generator.py
-- generate_nonid_dataset.py [new]
-- realism_experiment.py [new]
+- realism_experiment_per_seed.py [new]
+- realism_experiment_per_realization.py [new]
+- ihdp_analysis.py [new]
 - data/non_id.py [new]
+- generate_nonid_dataset.py [new]
 - datasets/non_id_synthetic_data.npz [new]
 - non_id_experiment.py [new]
-- ihdp_analysis.py [new]
