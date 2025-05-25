@@ -102,7 +102,7 @@ df_ = script_help.update_names(df_, column_mapping=column_mapping)
 df_["rmse_cf"] = df_.filter(regex="rmse_cf").mean(1)
 df_["mmd_int"] = df_.filter(regex="mmd_int").mean(1)
 df_["rmse_ate"] = df_.filter(regex="rmse_ate").mean(1)
-df_["kl_forward"] = df_["log_prob_true"] - df_["log_prob"]
+# df_["kl_forward"] = df_["log_prob_true"] - df_["log_prob"]
 
 row_id_cols = ["SEM", "Dataset", "Model"]
 
