@@ -103,7 +103,7 @@ nohup bash grids/causal_nf/robust_sinusoid/base/jobs_sh/jobs_1.sh > output_causa
 python generate_jobs.py --grid_file grids/causal_nf/robustness/base.yaml --format shell --jobs_per_file 20000 --batch_size 4
 ## run it, "robustness" directory
 nohup bash grids/causal_nf/robustness/base/jobs_sh/jobs_1.sh > output_causal_nf_robustness_jobs.log 2>&1 &\
-## This is part of RealCause. You need to manually edit the "exp_folders" variable in this python file to combine the dataframes/directories that you want (e.g. robust_sinusoid). By default this is "robust_sinusoid".
+## This is part of RealCause. You need to manually edit the "exp_folders" variable in this python file to combine the dataframes/directories that you want (e.g. robust_sinusoid) and the output filename (e.g. comparison_flows_robust_sinusoid.pickle). By default this is "robust_sinusoid".
 python scripts/create_comparison_flows.py
 ## to display the pickle file, see display_comparison_table.ipynb
 
@@ -113,7 +113,7 @@ python scripts/create_comparison_flows.py
 python generate_jobs.py --grid_file grids/causal_nf/robustness2/base.yaml --format shell --jobs_per_file 20000 --batch_size 4
 ## run it
 nohup bash grids/causal_nf/robustness2/base/jobs_sh/jobs_1.sh > output_causal_nf_robustness2_jobs.log 2>&1 &
-## This is part of RealCause. You need to manually edit the "exp_folders" variable in this python file to combine the dataframes/directories that you want (e.g. robustness2 in this case). By default this is "robust_sinusoid" (previous experiment).
+## This is part of RealCause. You need to manually edit the "exp_folders" variable in this python file to combine the dataframes/directories that you want (e.g. robustness2 in this case) and the output filename (e.g., comparison_flows_robustnesss2.pickle). By default this is "robust_sinusoid" (previous experiment).
 python scripts/create_comparison_flows.py
 ## to display the pickle file, see display_comparison_table.ipynb
 ```
