@@ -26,10 +26,10 @@ for realization in range(1, 1 + n_realizations):
             all_biases.append(bias)
 
             if (
-                summary["avg_y_pval"] > 0.05
-                and summary["avg_t_pval"] > 0.05
-                and summary["q30_y_pval"] > 0.05
+                summary["q30_y_pval"] > 0.05
                 and summary["q30_t_pval"] > 0.05
+                # and summary["avg_y_pval"] > 0.05
+                # and summary["avg_t_pval"] > 0.05
             ):
                 filtered_biases.append(bias)
         except Exception as e:
