@@ -301,49 +301,6 @@ class Triangle(SEM):
 
             functions = [f1, f2, f3]
 
-            # Helper: invert y = sin(2 pi f_freq u)
-            def old_sinusoid_inverse_scalar(y_elem, f_freq):
-                """
-                Solve sin(2 pi f_freq * u) = y_elem for real u.
-                We'll gather solutions for k in [-20..20],
-                then pick one at random. This yields a random real solution,
-                since there's an infinite number in theory.
-                """
-                # Must have y in [-1,1] or no real solution:
-                if y_elem < -1.0 or y_elem > 1.0:
-                    # No real solutions
-                    raise "NONONONO"
-                    return float("nan")  # or raise ValueError
-
-                alpha = math.asin(y_elem)
-                candidates = []
-                for k in range(-20, 21):
-                    # root1: alpha + 2 pi k => u = (alpha + 2 pi k)/(2 pi f_freq)
-                    u1 = (alpha + 2.0 * math.pi * k) / (2.0 * math.pi * f_freq)
-                    candidates.append(u1)
-                    # root2: pi - alpha + 2 pi k => u = (pi - alpha + 2 pi k)/(2 pi f_freq)
-                    beta = math.pi - alpha
-                    u2 = (beta + 2.0 * math.pi * k) / (2.0 * math.pi * f_freq)
-                    candidates.append(u2)
-
-                # pick a random solution among the unique ones
-                candidates = list(set(candidates))
-                if not candidates:
-                    raise ("NONONONO")
-                    return float("nan")
-                return random.choice(candidates)
-
-            def old_sinusoid_inverse_vec(y, f_freq):
-                """
-                Vectorized approach: For each y[i], we find
-                sin(2 pi f_freq * u)=y[i] solutions and pick one at random.
-                Return a Tensor of the same shape as y.
-                """
-                out = torch.empty_like(y)
-                y_np = y.detach().cpu().numpy()
-                for i in range(len(y_np)):
-                    out[i] = old_sinusoid_inverse_scalar(y_np[i], f_freq)
-                return out.to(y.device)
 
             def sinusoid_inverse_vec(y, f_freq):
                 """
@@ -354,21 +311,9 @@ class Triangle(SEM):
                 instead using torch.asin and broadcasting.
                 """
                 # 1) y must be in [-1, 1], or else asin is not real
-                #    Let's clamp or raise an error if needed
-                if torch.any(y < -1.0) or torch.any(y > 1.0):
-                    torch.set_printoptions(threshold=100_000)
-                    # # print(y)
-                    # for i in range(y.shape[0]):
-                    #     if y[i] > 1 or y[i] < -1:
-                    #         print(y[i])
-                    # raise ValueError(
-                    #     "Input out of domain [-1, 1]. Cannot invert sin()."
-                    # )
-                    # Clamp the values to [-1, 1]
-                    # y = torch.clamp(y, -1.0, 1.0)
-                    # Set values outside [-1, 1] to NaN
-                    y = torch.where((y >= -1.0) & (y <= 1.0), y, float('nan'))
-
+                # another option is to clamp: y = torch.clamp(y, -1.0, 1.0)
+                # here we set values outside [-1, 1] to NaN
+                y = torch.where((y >= -1.0) & (y <= 1.0), y, float('nan'))
 
                 # 2) Compute alpha = arcsin(y).
                 #    This is a tensor, same shape as y, with requires_grad=True if y does.
@@ -425,9 +370,7 @@ class Triangle(SEM):
                 val = x3 - base
                 return sinusoid_inverse_vec(val, f_freq)
 
-            # I think causalNF shouldn't need this
             inverses = [inv_f1, inv_f2, inv_f3]
-            # inverses = [None, None, None]
 
         super().__init__(functions, inverses, sem_name)
 
