@@ -79,7 +79,7 @@ Example summary.txt:
 }
 ```
 
-## Reproducing Experiment 1
+## Reproducing Experiment 1 of the position paper
 
 Each of these creates a summary.txt in the `out_dir` that summarizes the results.
 
@@ -168,3 +168,4 @@ git diff 82ccf1d..HEAD -- data/ihdp.py
 - generate_nonid_dataset.py [new]
 - datasets/non_id_synthetic_data.npz [new]
 - non_id_experiment.py [new]
+- equivalencerealism.py [new] - filtering by realism

@@ -90,7 +90,7 @@ Create your own directory in place of `causal-flows/grids/causal_nf/comparison_x
 
 The steps are then the same as before. 1) Generate the jobs 2) bash execute them 3) create comparison flows 4) Print the table
 
-6. Reproducing Experiment 2
+6. Reproducing Experiment 2 of the position paper
 
 ```bash
 # When assumption violations don't affect performance
